@@ -1,0 +1,40 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+backend/.venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# FastAPI / SQLite
+*.db
+*.sqlite
+*.sqlite3
+backend/pilates_vision_progress.db
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.npm/
+
+# Build logs and env
+*.log
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/

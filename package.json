@@ -1,0 +1,7 @@
+{
+  "name": "pilates-vision-progress-root",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}
