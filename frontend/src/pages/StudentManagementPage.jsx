@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Loader2, Search } from 'lucide-react';
 
-import { createStudent } from '../api';
+import { createStudent, fetchStudents } from '../api';
 
 const steps = ['Personal Info', 'Medical History', 'Goals'];
 
@@ -20,6 +20,10 @@ function StudentManagementPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const canContinue = useMemo(() => {
     if (step === 0) {
       return formData.name && formData.tax_id_cpf && formData.date_of_birth && formData.phone;
@@ -29,6 +33,22 @@ function StudentManagementPage() {
     }
     return formData.goals.length > 0;
   }, [step, formData]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetchStudents(searchTerm.trim());
+        setStudents(response.data);
+      } catch {
+        setStudents([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -44,6 +64,8 @@ function StudentManagementPage() {
       setSubmitted(true);
       setFormData(initialForm);
       setStep(0);
+      const response = await fetchStudents(searchTerm.trim());
+      setStudents(response.data);
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not save student.';
       window.alert(message);
@@ -159,6 +181,46 @@ function StudentManagementPage() {
             Student registered successfully.
           </p>
         )}
+      </article>
+
+      <article className="rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slateSoft">Registered Students</h2>
+          <label className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              className="w-full rounded-xl border border-slate-200 bg-white px-9 py-2 text-sm"
+              placeholder="Search by name, CPF, or phone"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[620px] text-left text-sm">
+            <thead className="text-slate-500">
+              <tr>
+                <th className="pb-3">Name</th>
+                <th className="pb-3">CPF</th>
+                <th className="pb-3">Phone</th>
+                <th className="pb-3">Date of Birth</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-700">
+              {students.map((student) => (
+                <tr key={student.id} className="border-t border-slate-100">
+                  <td className="py-3">{student.name}</td>
+                  <td className="py-3">{student.tax_id_cpf}</td>
+                  <td className="py-3">{student.phone}</td>
+                  <td className="py-3">{student.date_of_birth}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!isSearching && students.length === 0 ? <p className="pt-4 text-sm text-slate-500">No students found.</p> : null}
+          {isSearching ? <p className="pt-4 text-sm text-slate-500">Searching students...</p> : null}
+        </div>
       </article>
     </section>
   );

@@ -1,8 +1,10 @@
-import { ActivitySquare, ClipboardList, LayoutDashboard, UsersRound } from 'lucide-react';
+import { ActivitySquare, CalendarDays, ClipboardList, LayoutDashboard, UserRoundCog, UsersRound } from 'lucide-react';
 
 const items = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'students', label: 'Student Management', icon: UsersRound },
+  { key: 'instructors', label: 'Instructor Management', icon: UserRoundCog },
+  { key: 'schedule', label: 'Schedule', icon: CalendarDays },
   { key: 'analysis', label: 'Postural Analysis', icon: ActivitySquare },
   { key: 'plans', label: 'Training Plans', icon: ClipboardList },
 ];

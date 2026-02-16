@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 
 import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/DashboardPage';
+import InstructorManagementPage from './pages/InstructorManagementPage';
 import PosturalAnalysisPage from './pages/PosturalAnalysisPage';
+import SchedulePage from './pages/SchedulePage';
 import StudentManagementPage from './pages/StudentManagementPage';
 import TrainingPlansPage from './pages/TrainingPlansPage';
 
@@ -13,6 +15,10 @@ function App() {
     switch (activePage) {
       case 'students':
         return <StudentManagementPage />;
+      case 'instructors':
+        return <InstructorManagementPage />;
+      case 'schedule':
+        return <SchedulePage />;
       case 'analysis':
         return <PosturalAnalysisPage />;
       case 'plans':

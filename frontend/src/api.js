@@ -5,7 +5,22 @@ const api = axios.create({
 });
 
 export const createStudent = (payload) => api.post('/students', payload);
-export const fetchStudents = () => api.get('/students');
+export const fetchStudents = (query = '') =>
+  api.get('/students', {
+    params: query ? { q: query } : {},
+  });
+
+export const createInstructor = (payload) => api.post('/instructors', payload);
+export const fetchInstructors = () => api.get('/instructors');
+
+export const createAppointment = (payload) => api.post('/appointments', payload);
+export const fetchAppointments = (date = '') =>
+  api.get('/appointments', {
+    params: date ? { date } : {},
+  });
+export const updateAppointment = (appointmentId, payload) => api.put(`/appointments/${appointmentId}`, payload);
+export const deleteAppointment = (appointmentId) => api.delete(`/appointments/${appointmentId}`);
+
 export const analyzeImage = (formData) =>
   api.post('/analyze', formData, {
     headers: {
