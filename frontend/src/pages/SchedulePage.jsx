@@ -9,6 +9,7 @@ import {
   fetchStudents,
   updateAppointment,
 } from '../api';
+import { useToast } from '../components/ToastProvider';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -62,6 +63,7 @@ function formatReadableDateTime(isoText) {
 }
 
 function SchedulePage() {
+  const { pushToast } = useToast();
   const [students, setStudents] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -174,7 +176,7 @@ function SchedulePage() {
 
   const handleBook = async () => {
     if (!selectedStudent || !selectedInstructor || !selectedDate || !selectedTime) {
-      window.alert('Select student, instructor, and a valid slot.');
+      pushToast({ type: 'error', message: 'Select student, instructor, and a valid slot.' });
       return;
     }
 
@@ -193,17 +195,18 @@ function SchedulePage() {
       });
 
       await loadData();
+      pushToast({ type: 'success', message: 'Appointment booked successfully.' });
       closeModal();
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not create appointment.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
       setIsBooking(false);
     }
   };
 
   const handleSaveEdit = async () => {
     if (!detailAppointment || !editDate || !editTime || !statuses.includes(editStatus)) {
-      window.alert('Select a valid date, time, and status.');
+      pushToast({ type: 'error', message: 'Select a valid date, time, and status.' });
       return;
     }
 
@@ -219,10 +222,11 @@ function SchedulePage() {
 
       setDetailAppointment(response.data);
       await loadData();
+      pushToast({ type: 'success', message: 'Appointment updated successfully.' });
       setIsEditing(false);
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not update appointment.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       setIsSavingEdit(false);
     }
@@ -242,10 +246,11 @@ function SchedulePage() {
     try {
       await deleteAppointment(detailAppointment.id);
       await loadData();
+      pushToast({ type: 'success', message: 'Appointment deleted successfully.' });
       closeModal();
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not delete appointment.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
       setIsDeleting(false);
     }
   };

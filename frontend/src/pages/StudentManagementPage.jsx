@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Loader2, Pencil, Search, Trash2, X } from 'lucide-react';
 
 import { createStudent, deleteStudent, fetchStudents, updateStudent } from '../api';
+import { useToast } from '../components/ToastProvider';
 
 const steps = ['Personal Info', 'Medical History', 'Goals'];
 
@@ -15,6 +16,7 @@ const initialForm = {
 };
 
 function StudentManagementPage() {
+  const { pushToast } = useToast();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,9 +98,10 @@ function StudentManagementPage() {
       setFormData(initialForm);
       setStep(0);
       await loadStudents(searchTerm.trim());
+      pushToast({ type: 'success', message: 'Student registered successfully.' });
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not save student.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       setIsSubmitting(false);
     }
@@ -113,10 +116,11 @@ function StudentManagementPage() {
     try {
       await updateStudent(editingStudent.id, editForm);
       await loadStudents(searchTerm.trim());
+      pushToast({ type: 'success', message: 'Student updated successfully.' });
       closeEditModal();
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not update student.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
       setIsUpdating(false);
     }
   };
@@ -131,9 +135,10 @@ function StudentManagementPage() {
     try {
       await deleteStudent(studentId);
       await loadStudents(searchTerm.trim());
+      pushToast({ type: 'success', message: 'Student deleted successfully.' });
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not delete student.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       setDeletingId(null);
     }

@@ -98,6 +98,14 @@ def delete_student(student_id: int, db: Session = Depends(get_db)) -> Response:
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    has_appointments = db.query(models.Appointment).filter(models.Appointment.student_id == student_id).first()
+    if has_appointments:
+        raise HTTPException(status_code=409, detail="Cannot delete student with linked appointments")
+
+    has_assessments = db.query(models.Assessment).filter(models.Assessment.student_id == student_id).first()
+    if has_assessments:
+        raise HTTPException(status_code=409, detail="Cannot delete student with linked assessments")
+
     db.delete(student)
     db.commit()
     return Response(status_code=204)
@@ -156,6 +164,10 @@ def delete_instructor(instructor_id: int, db: Session = Depends(get_db)) -> Resp
     instructor = db.get(models.Instructor, instructor_id)
     if not instructor:
         raise HTTPException(status_code=404, detail="Instructor not found")
+
+    has_appointments = db.query(models.Appointment).filter(models.Appointment.instructor_id == instructor_id).first()
+    if has_appointments:
+        raise HTTPException(status_code=409, detail="Cannot delete instructor with linked appointments")
 
     db.delete(instructor)
     db.commit()

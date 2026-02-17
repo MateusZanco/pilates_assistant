@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, Pencil, Trash2, X } from 'lucide-react';
 
 import { createInstructor, deleteInstructor, fetchInstructors, updateInstructor } from '../api';
+import { useToast } from '../components/ToastProvider';
 
 const initialForm = {
   name: '',
@@ -12,6 +13,7 @@ const initialForm = {
 };
 
 function InstructorManagementPage() {
+  const { pushToast } = useToast();
   const [formData, setFormData] = useState(initialForm);
   const [instructors, setInstructors] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,9 +76,10 @@ function InstructorManagementPage() {
       setSaved(true);
       setFormData(initialForm);
       await loadInstructors();
+      pushToast({ type: 'success', message: 'Instructor saved successfully.' });
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not save instructor.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       setIsSubmitting(false);
     }
@@ -91,10 +94,11 @@ function InstructorManagementPage() {
     try {
       await updateInstructor(editingInstructor.id, editForm);
       await loadInstructors();
+      pushToast({ type: 'success', message: 'Instructor updated successfully.' });
       closeEditModal();
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not update instructor.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
       setIsUpdating(false);
     }
   };
@@ -109,9 +113,10 @@ function InstructorManagementPage() {
     try {
       await deleteInstructor(instructorId);
       await loadInstructors();
+      pushToast({ type: 'success', message: 'Instructor deleted successfully.' });
     } catch (error) {
       const message = error?.response?.data?.detail || 'Could not delete instructor.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       setDeletingId(null);
     }

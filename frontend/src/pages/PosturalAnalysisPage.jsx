@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, UploadCloud } from 'lucide-react';
 
 import { analyzeImage } from '../api';
+import { useToast } from '../components/ToastProvider';
 
 const detectedPoints = [
   { top: '18%', left: '52%', color: '#f97316' },
@@ -11,6 +12,7 @@ const detectedPoints = [
 ];
 
 function PosturalAnalysisPage() {
+  const { pushToast } = useToast();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -31,7 +33,7 @@ function PosturalAnalysisPage() {
 
   const handleAnalyze = async () => {
     if (!file) {
-      window.alert('Upload an image before running analysis.');
+      pushToast({ type: 'error', message: 'Upload an image before running analysis.' });
       return;
     }
 
@@ -49,9 +51,10 @@ function PosturalAnalysisPage() {
       const response = await analyzeImage(formData);
       setProgress(100);
       setResult(response.data);
+      pushToast({ type: 'success', message: 'Analysis completed successfully.' });
     } catch (error) {
       const message = error?.response?.data?.detail || 'Analysis failed.';
-      window.alert(message);
+      pushToast({ type: 'error', message });
     } finally {
       clearInterval(progressTicker);
       setIsAnalyzing(false);
