@@ -60,6 +60,49 @@ def list_students(q: str | None = Query(default=None, min_length=1), db: Session
     return query.order_by(models.Student.id.desc()).all()
 
 
+@app.get("/students/{student_id}", response_model=schemas.StudentRead)
+def get_student(student_id: int, db: Session = Depends(get_db)) -> schemas.StudentRead:
+    student = db.get(models.Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return student
+
+
+@app.put("/students/{student_id}", response_model=schemas.StudentRead)
+def update_student(student_id: int, payload: schemas.StudentUpdate, db: Session = Depends(get_db)) -> schemas.StudentRead:
+    student = db.get(models.Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    updates = payload.model_dump(exclude_unset=True)
+    if "tax_id_cpf" in updates:
+        existing = (
+            db.query(models.Student)
+            .filter(models.Student.tax_id_cpf == updates["tax_id_cpf"], models.Student.id != student_id)
+            .first()
+        )
+        if existing:
+            raise HTTPException(status_code=400, detail="A student with this CPF already exists")
+
+    for key, value in updates.items():
+        setattr(student, key, value)
+
+    db.commit()
+    db.refresh(student)
+    return student
+
+
+@app.delete("/students/{student_id}", status_code=204, response_class=Response)
+def delete_student(student_id: int, db: Session = Depends(get_db)) -> Response:
+    student = db.get(models.Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    db.delete(student)
+    db.commit()
+    return Response(status_code=204)
+
+
 @app.post("/instructors", response_model=schemas.InstructorRead, status_code=201)
 def create_instructor(instructor: schemas.InstructorCreate, db: Session = Depends(get_db)) -> schemas.InstructorRead:
     existing = db.query(models.Instructor).filter(models.Instructor.email == instructor.email).first()

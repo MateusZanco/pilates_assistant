@@ -9,9 +9,13 @@ export const fetchStudents = (query = '') =>
   api.get('/students', {
     params: query ? { q: query } : {},
   });
+export const updateStudent = (studentId, payload) => api.put(`/students/${studentId}`, payload);
+export const deleteStudent = (studentId) => api.delete(`/students/${studentId}`);
 
 export const createInstructor = (payload) => api.post('/instructors', payload);
 export const fetchInstructors = () => api.get('/instructors');
+export const updateInstructor = (instructorId, payload) => api.put(`/instructors/${instructorId}`, payload);
+export const deleteInstructor = (instructorId) => api.delete(`/instructors/${instructorId}`);
 
 export const createAppointment = (payload) => api.post('/appointments', payload);
 export const fetchAppointments = (date = '') =>

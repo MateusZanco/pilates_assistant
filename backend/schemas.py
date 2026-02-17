@@ -18,6 +18,15 @@ class StudentCreate(StudentBase):
     goals: str = Field(default="")
 
 
+class StudentUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    tax_id_cpf: str | None = Field(default=None, min_length=11, max_length=14)
+    date_of_birth: date | None = None
+    phone: str | None = Field(default=None, min_length=8, max_length=20)
+    medical_notes: str | None = None
+    goals: str | None = None
+
+
 class StudentRead(StudentBase):
     id: int
     goals: str
