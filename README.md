@@ -2,7 +2,7 @@
 title: Pilates Vision Progress
 emoji: 🧘
 colorFrom: green
-colorTo: slate
+colorTo: blue
 sdk: docker
 app_port: 7860
 ---
