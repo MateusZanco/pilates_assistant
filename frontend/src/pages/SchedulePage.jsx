@@ -9,26 +9,26 @@ import {
   fetchStudents,
   updateAppointment,
 } from '../api';
+import { useI18n } from '../i18n';
 import { useToast } from '../components/ToastProvider';
 
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const statuses = ['booked', 'completed', 'canceled'];
 const statusStyle = {
   booked: {
     dot: 'bg-amber-400',
-    card: 'bg-amber-50 text-amber-800',
-    chip: 'bg-amber-100 text-amber-700',
+    card: 'bg-amber-50 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
+    chip: 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200',
   },
   completed: {
     dot: 'bg-emerald-500',
-    card: 'bg-emerald-50 text-emerald-800',
-    chip: 'bg-emerald-100 text-emerald-700',
+    card: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200',
+    chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200',
   },
   canceled: {
     dot: 'bg-rose-500',
-    card: 'bg-rose-50 text-rose-800',
-    chip: 'bg-rose-100 text-rose-700',
+    card: 'bg-rose-50 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200',
+    chip: 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-200',
   },
 };
 
@@ -63,6 +63,7 @@ function formatReadableDateTime(isoText) {
 }
 
 function SchedulePage() {
+  const { t } = useI18n();
   const { pushToast } = useToast();
   const [students, setStudents] = useState([]);
   const [instructors, setInstructors] = useState([]);
@@ -85,6 +86,7 @@ function SchedulePage() {
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('08:00');
   const [editStatus, setEditStatus] = useState('booked');
+  const days = useMemo(() => [t('schedule.dayMon'), t('schedule.dayTue'), t('schedule.dayWed'), t('schedule.dayThu'), t('schedule.dayFri')], [t]);
 
   const loadData = async () => {
     setLoading(true);
@@ -176,7 +178,7 @@ function SchedulePage() {
 
   const handleBook = async () => {
     if (!selectedStudent || !selectedInstructor || !selectedDate || !selectedTime) {
-      pushToast({ type: 'error', message: 'Select student, instructor, and a valid slot.' });
+      pushToast({ type: 'error', message: t('schedule.invalidBook') });
       return;
     }
 
@@ -191,14 +193,14 @@ function SchedulePage() {
         start_time: startTime,
         end_time: endTime,
         status: 'booked',
-        notes: 'Scheduled from calendar view',
+        notes: t('schedule.defaultNote'),
       });
 
       await loadData();
-      pushToast({ type: 'success', message: 'Appointment booked successfully.' });
+      pushToast({ type: 'success', message: t('schedule.bookingSuccess') });
       closeModal();
     } catch (error) {
-      const message = error?.response?.data?.detail || 'Could not create appointment.';
+      const message = error?.response?.data?.detail || t('schedule.bookingError');
       pushToast({ type: 'error', message });
       setIsBooking(false);
     }
@@ -206,7 +208,7 @@ function SchedulePage() {
 
   const handleSaveEdit = async () => {
     if (!detailAppointment || !editDate || !editTime || !statuses.includes(editStatus)) {
-      pushToast({ type: 'error', message: 'Select a valid date, time, and status.' });
+      pushToast({ type: 'error', message: t('schedule.invalidEdit') });
       return;
     }
 
@@ -222,10 +224,10 @@ function SchedulePage() {
 
       setDetailAppointment(response.data);
       await loadData();
-      pushToast({ type: 'success', message: 'Appointment updated successfully.' });
+      pushToast({ type: 'success', message: t('schedule.updateSuccess') });
       setIsEditing(false);
     } catch (error) {
-      const message = error?.response?.data?.detail || 'Could not update appointment.';
+      const message = error?.response?.data?.detail || t('schedule.updateError');
       pushToast({ type: 'error', message });
     } finally {
       setIsSavingEdit(false);
@@ -237,7 +239,7 @@ function SchedulePage() {
       return;
     }
 
-    const confirmed = window.confirm('Delete this appointment? This action cannot be undone.');
+    const confirmed = window.confirm(t('schedule.deleteConfirm'));
     if (!confirmed) {
       return;
     }
@@ -246,10 +248,10 @@ function SchedulePage() {
     try {
       await deleteAppointment(detailAppointment.id);
       await loadData();
-      pushToast({ type: 'success', message: 'Appointment deleted successfully.' });
+      pushToast({ type: 'success', message: t('schedule.deleteSuccess') });
       closeModal();
     } catch (error) {
-      const message = error?.response?.data?.detail || 'Could not delete appointment.';
+      const message = error?.response?.data?.detail || t('schedule.deleteError');
       pushToast({ type: 'error', message });
       setIsDeleting(false);
     }
@@ -258,39 +260,41 @@ function SchedulePage() {
   return (
     <section className="space-y-6 animate-fadeSlide">
       <header>
-        <h1 className="text-2xl font-bold text-slateSoft">Schedule</h1>
-        <p className="text-sm text-slate-600">Weekly planning board for student sessions.</p>
+        <h1 className="text-2xl font-bold text-slateSoft dark:text-slate-100">{t('schedule.title')}</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t('schedule.subtitle')}</p>
       </header>
 
-      <article className="rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm">
+      <article className="rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm dark:bg-slate-900/85">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slateSoft">Calendar View</h2>
-          <span className="text-xs text-slate-500">Click empty slots to book and booked slots for details.</span>
+          <h2 className="text-lg font-semibold text-slateSoft dark:text-slate-100">{t('schedule.calendarView')}</h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('schedule.helper')}</span>
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center gap-4 rounded-xl bg-paper px-4 py-3">
+        <div className="mb-5 flex flex-wrap items-center gap-4 rounded-xl bg-paper px-4 py-3 dark:bg-slate-800">
           {statuses.map((status) => (
-            <div key={status} className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <div key={status} className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <span className={`h-2.5 w-2.5 rounded-full ${statusStyle[status].dot}`} />
-              <span className="capitalize">{status}</span>
+              <span className="capitalize">
+                {status === 'booked' ? t('schedule.statusBooked') : status === 'completed' ? t('schedule.statusCompleted') : t('schedule.statusCanceled')}
+              </span>
             </div>
           ))}
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[960px] rounded-2xl border border-slate-200">
-            <div className="grid grid-cols-6 bg-paper text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <div className="border-r border-slate-200 p-3">Time</div>
+          <div className="min-w-[960px] rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-6 bg-paper text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <div className="border-r border-slate-200 p-3 dark:border-slate-700">{t('schedule.time')}</div>
               {days.map((day) => (
-                <div key={day} className="border-r border-slate-200 p-3 last:border-r-0">
+                <div key={day} className="border-r border-slate-200 p-3 last:border-r-0 dark:border-slate-700">
                   {day}
                 </div>
               ))}
             </div>
 
             {timeSlots.map((time) => (
-              <div key={time} className="grid grid-cols-6 border-t border-slate-100">
-                <div className="border-r border-slate-100 p-3 text-sm text-slate-500">{time}</div>
+              <div key={time} className="grid grid-cols-6 border-t border-slate-100 dark:border-slate-700">
+                <div className="border-r border-slate-100 p-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{time}</div>
                 {days.map((day, dayIndex) => {
                   const date = slotDateFromDay(dayIndex);
                   const slotKey = `${date}T${time}`;
@@ -301,17 +305,23 @@ function SchedulePage() {
                       key={`${day}-${time}`}
                       type="button"
                       onClick={() => (appointment ? openDetailModal(appointment) : openBookingModal(dayIndex, time))}
-                      className="flex min-h-16 items-center justify-center border-r border-slate-100 p-2 text-left text-xs transition hover:bg-sage/15 last:border-r-0"
+                      className="flex min-h-16 items-center justify-center border-r border-slate-100 p-2 text-left text-xs transition hover:bg-sage/15 last:border-r-0 dark:border-slate-700"
                     >
                       {appointment ? (
                         <div className={`w-full rounded-lg px-2 py-1 ${statusStyle[appointment.status]?.card || statusStyle.booked.card}`}>
-                          <p className="font-medium capitalize">{appointment.status}</p>
-                          <p>{studentMap.get(appointment.student_id)?.name || 'Student'}</p>
+                          <p className="font-medium capitalize">
+                            {appointment.status === 'booked'
+                              ? t('schedule.statusBooked')
+                              : appointment.status === 'completed'
+                                ? t('schedule.statusCompleted')
+                                : t('schedule.statusCanceled')}
+                          </p>
+                          <p>{studentMap.get(appointment.student_id)?.name || t('schedule.student')}</p>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400">
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
                           <CalendarPlus2 size={14} />
-                          Book
+                          {t('schedule.book')}
                         </span>
                       )}
                     </button>
@@ -322,30 +332,30 @@ function SchedulePage() {
           </div>
         </div>
 
-        {loading ? <p className="pt-4 text-sm text-slate-500">Loading schedule...</p> : null}
+        {loading ? <p className="pt-4 text-sm text-slate-500 dark:text-slate-400">{t('schedule.loading')}</p> : null}
       </article>
 
       {modalMode === 'book' ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-card">
-            <h3 className="text-lg font-semibold text-slateSoft">Book Session</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              {selectedDate} at {selectedTime}
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-card dark:bg-slate-900">
+            <h3 className="text-lg font-semibold text-slateSoft dark:text-slate-100">{t('schedule.bookSession')}</h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {selectedDate} • {selectedTime}
             </p>
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="text-sm text-slate-600">Search Student</label>
+                <label className="text-sm text-slate-600 dark:text-slate-300">{t('schedule.searchStudent')}</label>
                 <div className="relative mt-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   <input
-                    className="w-full rounded-xl border border-slate-200 px-9 py-2 text-sm"
-                    placeholder="Type name, CPF, or phone"
+                    className="w-full rounded-xl border border-slate-200 px-9 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder={t('schedule.searchStudentPlaceholder')}
                     value={studentSearch}
                     onChange={(event) => setStudentSearch(event.target.value)}
                   />
                 </div>
-                <div className="mt-2 max-h-36 overflow-y-auto rounded-xl border border-slate-200">
+                <div className="mt-2 max-h-36 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
                   {filteredStudents.map((student) => (
                     <button
                       key={student.id}
@@ -354,19 +364,19 @@ function SchedulePage() {
                         setSelectedStudent(student);
                         setStudentSearch(student.name);
                       }}
-                      className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm text-slate-700 last:border-b-0 hover:bg-paper"
+                      className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm text-slate-700 last:border-b-0 hover:bg-paper dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
-                      {student.name} <span className="text-slate-400">({student.phone})</span>
+                      {student.name} <span className="text-slate-400 dark:text-slate-500">({student.phone})</span>
                     </button>
                   ))}
-                  {filteredStudents.length === 0 ? <p className="px-3 py-2 text-sm text-slate-500">No students found.</p> : null}
+                  {filteredStudents.length === 0 ? <p className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">{t('schedule.noStudents')}</p> : null}
                 </div>
               </div>
 
-              <label className="block text-sm text-slate-600">
-                Instructor
+              <label className="block text-sm text-slate-600 dark:text-slate-300">
+                {t('schedule.instructor')}
                 <select
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   value={selectedInstructor}
                   onChange={(event) => setSelectedInstructor(event.target.value)}
                 >
@@ -384,9 +394,9 @@ function SchedulePage() {
                 type="button"
                 onClick={closeModal}
                 disabled={isBooking}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60"
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -395,7 +405,7 @@ function SchedulePage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
                 {isBooking ? <Loader2 className="animate-spin" size={16} /> : null}
-                {isBooking ? 'Booking...' : 'Confirm Booking'}
+                {isBooking ? t('schedule.booking') : t('schedule.confirmBooking')}
               </button>
             </div>
           </div>
@@ -404,44 +414,48 @@ function SchedulePage() {
 
       {modalMode === 'detail' && detailAppointment ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-card">
-            <h3 className="text-lg font-semibold text-slateSoft">Appointment Details</h3>
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-card dark:bg-slate-900">
+            <h3 className="text-lg font-semibold text-slateSoft dark:text-slate-100">{t('schedule.details')}</h3>
 
             {!isEditing ? (
-              <div className="mt-4 space-y-3 text-sm text-slate-700">
+              <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-200">
                 <p>
-                  <span className="font-semibold text-slateSoft">Student:</span> {studentMap.get(detailAppointment.student_id)?.name || 'Unknown'}
+                  <span className="font-semibold text-slateSoft dark:text-slate-100">{t('schedule.student')}:</span> {studentMap.get(detailAppointment.student_id)?.name || t('schedule.unknown')}
                 </p>
                 <p>
-                  <span className="font-semibold text-slateSoft">Instructor:</span> {instructorMap.get(detailAppointment.instructor_id)?.name || 'Unknown'}
+                  <span className="font-semibold text-slateSoft dark:text-slate-100">{t('schedule.instructor')}:</span> {instructorMap.get(detailAppointment.instructor_id)?.name || t('schedule.unknown')}
                 </p>
                 <p>
-                  <span className="font-semibold text-slateSoft">Time:</span> {formatReadableDateTime(detailAppointment.start_time)}
+                  <span className="font-semibold text-slateSoft dark:text-slate-100">{t('schedule.time')}:</span> {formatReadableDateTime(detailAppointment.start_time)}
                 </p>
                 <p>
-                  <span className="font-semibold text-slateSoft">Status:</span>{' '}
+                  <span className="font-semibold text-slateSoft dark:text-slate-100">{t('schedule.status')}:</span>{' '}
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyle[detailAppointment.status]?.chip || statusStyle.booked.chip}`}>
-                    {detailAppointment.status}
+                    {detailAppointment.status === 'booked'
+                      ? t('schedule.statusBooked')
+                      : detailAppointment.status === 'completed'
+                        ? t('schedule.statusCompleted')
+                        : t('schedule.statusCanceled')}
                   </span>
                 </p>
               </div>
             ) : (
               <div className="mt-4 space-y-4 text-sm">
-                <label className="block text-slate-600">
-                  Date
+                <label className="block text-slate-600 dark:text-slate-300">
+                  {t('schedule.date')}
                   <input
                     type="date"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     value={editDate}
                     onChange={(event) => setEditDate(event.target.value)}
                   />
                 </label>
-                <label className="block text-slate-600">
-                  Time
+                <label className="block text-slate-600 dark:text-slate-300">
+                  {t('schedule.time')}
                   <div className="relative mt-1">
                     <Clock3 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <select
-                      className="w-full rounded-xl border border-slate-200 px-9 py-2"
+                      className="w-full rounded-xl border border-slate-200 px-9 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       value={editTime}
                       onChange={(event) => setEditTime(event.target.value)}
                     >
@@ -453,16 +467,16 @@ function SchedulePage() {
                     </select>
                   </div>
                 </label>
-                <label className="block text-slate-600">
-                  Status
+                <label className="block text-slate-600 dark:text-slate-300">
+                  {t('schedule.status')}
                   <select
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 capitalize"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     value={editStatus}
                     onChange={(event) => setEditStatus(event.target.value)}
                   >
                     {statuses.map((status) => (
                       <option key={status} value={status}>
-                        {status}
+                        {status === 'booked' ? t('schedule.statusBooked') : status === 'completed' ? t('schedule.statusCompleted') : t('schedule.statusCanceled')}
                       </option>
                     ))}
                   </select>
@@ -478,7 +492,7 @@ function SchedulePage() {
                 className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 disabled:opacity-60"
               >
                 {isDeleting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? t('schedule.deleting') : t('common.delete')}
               </button>
 
               <div className="flex flex-wrap gap-3">
@@ -486,9 +500,9 @@ function SchedulePage() {
                   type="button"
                   onClick={closeModal}
                   disabled={isDeleting || isSavingEdit}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
                 >
-                  Close
+                  {t('common.close')}
                 </button>
 
                 {!isEditing ? (
@@ -498,7 +512,7 @@ function SchedulePage() {
                     disabled={isDeleting || isSavingEdit}
                     className="rounded-xl bg-slateSoft px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                 ) : (
                   <button
@@ -508,7 +522,7 @@ function SchedulePage() {
                     className="inline-flex items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
                   >
                     {isSavingEdit ? <Loader2 className="animate-spin" size={16} /> : null}
-                    {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                    {isSavingEdit ? t('student.saving') : t('common.saveChanges')}
                   </button>
                 )}
               </div>

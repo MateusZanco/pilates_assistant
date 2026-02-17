@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchStudents } from '../api';
+import { useI18n } from '../i18n';
 import { useToast } from '../components/ToastProvider';
 
 function getAge(dateOfBirth) {
@@ -19,6 +20,7 @@ function getAge(dateOfBirth) {
 }
 
 function TrainingPlansPage() {
+  const { t } = useI18n();
   const { pushToast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [students, setStudents] = useState([]);
@@ -33,14 +35,14 @@ function TrainingPlansPage() {
         setStudents(response.data);
       } catch {
         setStudents([]);
-        pushToast({ type: 'error', message: 'Could not load students.' });
+        pushToast({ type: 'error', message: t('plans.loadError') });
       } finally {
         setIsLoadingStudents(false);
       }
     };
 
     loadStudents();
-  }, [pushToast]);
+  }, [pushToast, t]);
 
   const selectedStudent = useMemo(
     () => students.find((student) => String(student.id) === selectedStudentId) || null,
@@ -54,27 +56,27 @@ function TrainingPlansPage() {
     setIsGenerating(true);
     setTimeout(() => {
       setIsGenerating(false);
-      pushToast({ type: 'success', message: `Prototype action: Training plan generated for ${selectedStudent.name}.` });
+      pushToast({ type: 'success', message: t('plans.generated', { name: selectedStudent.name }) });
     }, 1200);
   };
 
   return (
     <section className="space-y-6 animate-fadeSlide">
       <header>
-        <h1 className="text-2xl font-bold text-slateSoft">Training Plans</h1>
-        <p className="text-sm text-slate-600">Prepare personalized routines based on assessments and goals.</p>
+        <h1 className="text-2xl font-bold text-slateSoft dark:text-slate-100">{t('plans.title')}</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t('plans.subtitle')}</p>
       </header>
 
-      <article className="rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm">
-        <label className="block text-sm text-slate-600">
-          Select Student
+      <article className="rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm dark:bg-slate-900/85">
+        <label className="block text-sm text-slate-600 dark:text-slate-300">
+          {t('plans.selectStudent')}
           <select
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             value={selectedStudentId}
             onChange={(event) => setSelectedStudentId(event.target.value)}
             disabled={isLoadingStudents}
           >
-            <option value="">{isLoadingStudents ? 'Loading students...' : 'Choose a student'}</option>
+            <option value="">{isLoadingStudents ? t('plans.loadingStudents') : t('plans.chooseStudent')}</option>
             {students.map((student) => (
               <option key={student.id} value={student.id}>
                 {student.name}
@@ -84,23 +86,23 @@ function TrainingPlansPage() {
         </label>
 
         {selectedStudent ? (
-          <div className="mt-4 rounded-xl border border-sage/30 bg-paper p-4">
-            <h3 className="text-sm font-semibold text-slateSoft">Student Profile</h3>
-            <div className="mt-2 grid gap-1 text-sm text-slate-600">
+          <div className="mt-4 rounded-xl border border-sage/30 bg-paper p-4 dark:bg-slate-800">
+            <h3 className="text-sm font-semibold text-slateSoft dark:text-slate-100">{t('plans.profile')}</h3>
+            <div className="mt-2 grid gap-1 text-sm text-slate-600 dark:text-slate-300">
               <p>
-                <span className="font-medium text-slateSoft">Name:</span> {selectedStudent.name}
+                <span className="font-medium text-slateSoft dark:text-slate-100">{t('student.name')}:</span> {selectedStudent.name}
               </p>
               <p>
-                <span className="font-medium text-slateSoft">Age:</span> {getAge(selectedStudent.date_of_birth)}
+                <span className="font-medium text-slateSoft dark:text-slate-100">{t('plans.age')}:</span> {getAge(selectedStudent.date_of_birth)}
               </p>
               <p>
-                <span className="font-medium text-slateSoft">Goal:</span> {selectedStudent.goals || 'Not informed'}
+                <span className="font-medium text-slateSoft dark:text-slate-100">{t('plans.goal')}:</span> {selectedStudent.goals || t('plans.notInformed')}
               </p>
             </div>
           </div>
         ) : null}
 
-        <p className="text-sm text-slate-600">Prototype area for future smart training plan recommendations.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t('plans.description')}</p>
         <button
           type="button"
           onClick={handleGenerate}
@@ -108,7 +110,7 @@ function TrainingPlansPage() {
           disabled={isGenerating || !selectedStudent}
         >
           {isGenerating ? <Loader2 className="animate-spin" size={16} /> : null}
-          {isGenerating ? 'Generating...' : 'Generate Plan'}
+          {isGenerating ? t('plans.generating') : t('plans.generate')}
         </button>
       </article>
     </section>

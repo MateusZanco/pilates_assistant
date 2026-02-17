@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, UploadCloud } from 'lucide-react';
 
 import { analyzeImage } from '../api';
+import { useI18n } from '../i18n';
 import { useToast } from '../components/ToastProvider';
 
 const detectedPoints = [
@@ -12,6 +13,7 @@ const detectedPoints = [
 ];
 
 function PosturalAnalysisPage() {
+  const { t } = useI18n();
   const { pushToast } = useToast();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
@@ -33,7 +35,7 @@ function PosturalAnalysisPage() {
 
   const handleAnalyze = async () => {
     if (!file) {
-      pushToast({ type: 'error', message: 'Upload an image before running analysis.' });
+      pushToast({ type: 'error', message: t('analysis.uploadRequired') });
       return;
     }
 
@@ -51,9 +53,9 @@ function PosturalAnalysisPage() {
       const response = await analyzeImage(formData);
       setProgress(100);
       setResult(response.data);
-      pushToast({ type: 'success', message: 'Analysis completed successfully.' });
+      pushToast({ type: 'success', message: t('analysis.analysisSuccess') });
     } catch (error) {
-      const message = error?.response?.data?.detail || 'Analysis failed.';
+      const message = error?.response?.data?.detail || t('analysis.analysisError');
       pushToast({ type: 'error', message });
     } finally {
       clearInterval(progressTicker);
@@ -64,22 +66,22 @@ function PosturalAnalysisPage() {
   return (
     <section className="space-y-6 animate-fadeSlide">
       <header>
-        <h1 className="text-2xl font-bold text-slateSoft">Postural Analysis</h1>
-        <p className="text-sm text-slate-600">Upload student imagery and run AI-assisted posture insights.</p>
+        <h1 className="text-2xl font-bold text-slateSoft dark:text-slate-100">{t('analysis.title')}</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t('analysis.subtitle')}</p>
       </header>
 
-      <article className="grid gap-6 rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm xl:grid-cols-[1.2fr_1fr]">
+      <article className="grid gap-6 rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm dark:bg-slate-900/85 xl:grid-cols-[1.2fr_1fr]">
         <div className="space-y-4">
-          <label className="flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-sage/60 bg-paper p-4 text-center">
+          <label className="flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-sage/60 bg-paper p-4 text-center dark:bg-slate-800">
             <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
-            <span className="inline-flex items-center gap-2 text-slateSoft">
+            <span className="inline-flex items-center gap-2 text-slateSoft dark:text-slate-100">
               <UploadCloud size={18} />
-              {file ? `Selected: ${file.name}` : 'Click to upload a posture image'}
+              {file ? t('analysis.selectedFile', { name: file.name }) : t('analysis.uploadCta')}
             </span>
           </label>
 
-          <div className="relative overflow-hidden rounded-2xl bg-slate-100" style={{ minHeight: 340 }}>
-            {preview ? <img src={preview} alt="Preview" className="h-full w-full object-cover" /> : null}
+          <div className="relative overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800" style={{ minHeight: 340 }}>
+            {preview ? <img src={preview} alt={t('analysis.previewAlt')} className="h-full w-full object-cover" /> : null}
 
             {isAnalyzing && preview ? (
               <>
@@ -106,29 +108,29 @@ function PosturalAnalysisPage() {
             disabled={isAnalyzing}
           >
             {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : null}
-            {isAnalyzing ? 'Analyzing...' : 'Analyze Posture'}
+            {isAnalyzing ? t('analysis.analyzing') : t('analysis.analyze')}
           </button>
 
-          <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
             <div className="h-full rounded-full bg-slateSoft transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
-        <div className="rounded-2xl bg-paper p-4">
-          <h2 className="text-lg font-semibold text-slateSoft">AI Findings</h2>
+        <div className="rounded-2xl bg-paper p-4 dark:bg-slate-800">
+          <h2 className="text-lg font-semibold text-slateSoft dark:text-slate-100">{t('analysis.findings')}</h2>
           {result ? (
-            <div className="mt-4 space-y-3 text-sm text-slate-700">
+            <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-200">
               <p>
-                <span className="font-semibold">Status:</span> {result.status}
+                <span className="font-semibold">{t('analysis.status')}:</span> {result.status}
               </p>
               <p>
-                <span className="font-semibold">Score:</span> {result.score}
+                <span className="font-semibold">{t('analysis.score')}:</span> {result.score}
               </p>
               <div>
-                <p className="font-semibold">Detected Deviations:</p>
+                <p className="font-semibold">{t('analysis.deviations')}</p>
                 <ul className="mt-2 space-y-1">
                   {result.deviations.map((deviation) => (
-                    <li key={deviation} className="rounded-lg bg-white px-3 py-2">
+                    <li key={deviation} className="rounded-lg bg-white px-3 py-2 dark:bg-slate-900 dark:text-slate-100">
                       {deviation}
                     </li>
                   ))}
@@ -136,7 +138,7 @@ function PosturalAnalysisPage() {
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-slate-500">Run an analysis to view the postural report.</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('analysis.empty')}</p>
           )}
         </div>
       </article>

@@ -1,20 +1,49 @@
-import { ActivitySquare, CalendarDays, ClipboardList, LayoutDashboard, Moon, Sun, UserRoundCog, UsersRound } from 'lucide-react';
+import { ActivitySquare, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, LayoutDashboard, UserRoundCog, UsersRound, X } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 const items = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'students', label: 'Student Management', icon: UsersRound },
-  { key: 'instructors', label: 'Instructor Management', icon: UserRoundCog },
-  { key: 'schedule', label: 'Schedule', icon: CalendarDays },
-  { key: 'analysis', label: 'Postural Analysis', icon: ActivitySquare },
-  { key: 'plans', label: 'Training Plans', icon: ClipboardList },
+  { key: 'dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard },
+  { key: 'students', labelKey: 'sidebar.students', icon: UsersRound },
+  { key: 'instructors', labelKey: 'sidebar.instructors', icon: UserRoundCog },
+  { key: 'schedule', labelKey: 'sidebar.schedule', icon: CalendarDays },
+  { key: 'analysis', labelKey: 'sidebar.analysis', icon: ActivitySquare },
+  { key: 'plans', labelKey: 'sidebar.plans', icon: ClipboardList },
 ];
 
-function Sidebar({ activePage, onNavigate, theme, onToggleTheme }) {
+function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
+  const { t } = useI18n();
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-20 flex w-72 flex-col border-r border-sage/20 bg-white/90 p-6 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Pilates Studio</p>
-        <h1 className="text-lg font-bold text-slateSoft dark:text-slate-100">Vision & Progress</h1>
+    <>
+      {mobileOpen ? <div className="fixed inset-0 z-30 bg-slate-900/45 md:hidden" onClick={onCloseMobile} /> : null}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-sage/20 bg-white/90 p-4 backdrop-blur-sm transition-all dark:border-slate-700 dark:bg-slate-900/90 ${
+          collapsed ? 'w-20' : 'w-72'
+        } ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
+      <div className={`mb-6 flex items-start ${collapsed ? 'justify-center' : 'justify-between'} gap-2`}>
+        <div className={collapsed ? 'hidden' : 'block'}>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{t('sidebar.studio')}</p>
+          <h1 className="text-lg font-bold text-slateSoft dark:text-slate-100">{t('sidebar.vision')}</h1>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:inline-flex"
+            aria-label="Toggle sidebar"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       <nav className="space-y-2">
@@ -33,21 +62,13 @@ function Sidebar({ activePage, onNavigate, theme, onToggleTheme }) {
               }`}
             >
               <Icon size={18} />
-              {item.label}
+              <span className={collapsed ? 'hidden' : 'inline'}>{t(item.labelKey)}</span>
             </button>
           );
         })}
       </nav>
-
-      <button
-        type="button"
-        onClick={onToggleTheme}
-        className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-      >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-      </button>
     </aside>
+    </>
   );
 }
 
