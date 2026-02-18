@@ -38,3 +38,4 @@ frontend/dist/
 # IDE
 .vscode/
 .idea/
+sync_to_hf.yml
