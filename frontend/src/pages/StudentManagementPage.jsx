@@ -14,6 +14,55 @@ const initialForm = {
   goals: '',
 };
 
+function onlyDigits(value) {
+  return value.replace(/\D/g, '');
+}
+
+function formatCpf(value) {
+  const digits = onlyDigits(value).slice(0, 11);
+  const parts = [
+    digits.slice(0, 3),
+    digits.slice(3, 6),
+    digits.slice(6, 9),
+    digits.slice(9, 11),
+  ].filter(Boolean);
+
+  if (parts.length <= 1) {
+    return parts[0] || '';
+  }
+  if (parts.length === 2) {
+    return `${parts[0]}.${parts[1]}`;
+  }
+  if (parts.length === 3) {
+    return `${parts[0]}.${parts[1]}.${parts[2]}`;
+  }
+  return `${parts[0]}.${parts[1]}.${parts[2]}-${parts[3]}`;
+}
+
+function getApiErrorMessage(error, fallbackMessage) {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string') {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const parsed = detail
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+        if (item && typeof item === 'object' && typeof item.msg === 'string') {
+          return item.msg;
+        }
+        return null;
+      })
+      .filter(Boolean);
+    if (parsed.length) {
+      return parsed.join(' | ');
+    }
+  }
+  return fallbackMessage;
+}
+
 function StudentManagementPage() {
   const { t } = useI18n();
   const { pushToast } = useToast();
@@ -33,8 +82,15 @@ function StudentManagementPage() {
   const steps = [t('student.stepPersonal'), t('student.stepMedical'), t('student.stepGoals')];
 
   const canContinue = useMemo(() => {
+    const cpfDigits = onlyDigits(formData.tax_id_cpf);
+    const phoneDigits = onlyDigits(formData.phone);
     if (step === 0) {
-      return formData.name && formData.tax_id_cpf && formData.date_of_birth && formData.phone;
+      return (
+        formData.name.trim().length >= 2 &&
+        cpfDigits.length === 11 &&
+        !!formData.date_of_birth &&
+        phoneDigits.length >= 8
+      );
     }
     if (step === 1) {
       return true;
@@ -64,11 +120,27 @@ function StudentManagementPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'tax_id_cpf') {
+      setFormData((prev) => ({ ...prev, tax_id_cpf: formatCpf(value) }));
+      return;
+    }
+    if (name === 'phone') {
+      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'tax_id_cpf') {
+      setEditForm((prev) => ({ ...prev, tax_id_cpf: formatCpf(value) }));
+      return;
+    }
+    if (name === 'phone') {
+      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      return;
+    }
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -91,17 +163,31 @@ function StudentManagementPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const payload = {
+      ...formData,
+      name: formData.name.trim(),
+      tax_id_cpf: onlyDigits(formData.tax_id_cpf).slice(0, 11),
+      phone: onlyDigits(formData.phone).slice(0, 20),
+      medical_notes: formData.medical_notes.trim(),
+      goals: formData.goals.trim(),
+    };
+
+    if (!payload.name || payload.name.length < 2 || !payload.tax_id_cpf || !payload.date_of_birth || payload.phone.length < 8) {
+      pushToast({ type: 'error', message: t('student.invalidForm') });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitted(false);
     try {
-      await createStudent(formData);
+      await createStudent(payload);
       setSubmitted(true);
       setFormData(initialForm);
       setStep(0);
       await loadStudents(searchTerm.trim());
       pushToast({ type: 'success', message: t('student.registered') });
     } catch (error) {
-      const message = error?.response?.data?.detail || t('student.saveError');
+      const message = getApiErrorMessage(error, t('student.saveError'));
       pushToast({ type: 'error', message });
     } finally {
       setIsSubmitting(false);
@@ -115,12 +201,19 @@ function StudentManagementPage() {
 
     setIsUpdating(true);
     try {
-      await updateStudent(editingStudent.id, editForm);
+      await updateStudent(editingStudent.id, {
+        ...editForm,
+        name: editForm.name.trim(),
+        tax_id_cpf: onlyDigits(editForm.tax_id_cpf).slice(0, 11),
+        phone: onlyDigits(editForm.phone).slice(0, 20),
+        medical_notes: editForm.medical_notes.trim(),
+        goals: editForm.goals.trim(),
+      });
       await loadStudents(searchTerm.trim());
       pushToast({ type: 'success', message: t('student.updated') });
       closeEditModal();
     } catch (error) {
-      const message = error?.response?.data?.detail || t('student.updateError');
+      const message = getApiErrorMessage(error, t('student.updateError'));
       pushToast({ type: 'error', message });
       setIsUpdating(false);
     }
@@ -138,7 +231,7 @@ function StudentManagementPage() {
       await loadStudents(searchTerm.trim());
       pushToast({ type: 'success', message: t('student.deleted') });
     } catch (error) {
-      const message = error?.response?.data?.detail || t('student.deleteError');
+      const message = getApiErrorMessage(error, t('student.deleteError'));
       pushToast({ type: 'error', message });
     } finally {
       setDeletingId(null);
@@ -175,7 +268,7 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.cpf')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="tax_id_cpf" value={formData.tax_id_cpf} onChange={handleChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="tax_id_cpf" value={formData.tax_id_cpf} onChange={handleChange} inputMode="numeric" maxLength={14} />
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.dob')}
@@ -183,7 +276,7 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" />
               </label>
             </div>
           )}
@@ -333,7 +426,7 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.cpf')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="tax_id_cpf" value={editForm.tax_id_cpf} onChange={handleEditChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="tax_id_cpf" value={editForm.tax_id_cpf} onChange={handleEditChange} inputMode="numeric" maxLength={14} />
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.dob')}
@@ -341,7 +434,7 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" />
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
                 {t('student.medicalNotes')}

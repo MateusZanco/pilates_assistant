@@ -75,6 +75,7 @@ const translations = {
       saveError: 'Could not save student.',
       updateError: 'Could not update student.',
       deleteError: 'Could not delete student.',
+      invalidForm: 'Please complete required fields with valid values.',
     },
     instructor: {
       title: 'Instructor Management',
@@ -244,6 +245,7 @@ const translations = {
       saveError: 'Não foi possível salvar o aluno.',
       updateError: 'Não foi possível atualizar o aluno.',
       deleteError: 'Não foi possível excluir o aluno.',
+      invalidForm: 'Preencha os campos obrigatórios com valores válidos.',
     },
     instructor: {
       title: 'Gestão de Instrutores',

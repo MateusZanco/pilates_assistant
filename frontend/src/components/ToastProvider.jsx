@@ -15,6 +15,35 @@ const toneIcons = {
   info: Info,
 };
 
+function normalizeToastMessage(message) {
+  if (typeof message === 'string') {
+    return message;
+  }
+  if (Array.isArray(message)) {
+    return message
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+        if (item && typeof item === 'object' && typeof item.msg === 'string') {
+          return item.msg;
+        }
+        return String(item);
+      })
+      .join(' | ');
+  }
+  if (message && typeof message === 'object') {
+    if (typeof message.detail === 'string') {
+      return message.detail;
+    }
+    if (Array.isArray(message.detail)) {
+      return normalizeToastMessage(message.detail);
+    }
+    return JSON.stringify(message);
+  }
+  return String(message ?? '');
+}
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
@@ -25,7 +54,7 @@ export function ToastProvider({ children }) {
   const pushToast = useCallback(
     ({ type = 'info', message }) => {
       const id = crypto.randomUUID();
-      setToasts((prev) => [...prev, { id, type, message }]);
+      setToasts((prev) => [...prev, { id, type, message: normalizeToastMessage(message) }]);
       window.setTimeout(() => removeToast(id), 3200);
     },
     [removeToast]
