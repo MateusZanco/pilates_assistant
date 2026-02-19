@@ -132,7 +132,7 @@ function StudentManagementPage() {
         return;
       }
       setFormErrors((prev) => ({ ...prev, name: '' }));
-      setFormData((prev) => ({ ...prev, name: value }));
+      setFormData((prev) => ({ ...prev, name: value.slice(0, 100) }));
       return;
     }
     if (name === 'tax_id_cpf') {
@@ -142,7 +142,11 @@ function StudentManagementPage() {
     if (name === 'phone') {
       const hasInvalidChars = /\D/.test(value);
       setFormErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
-      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 15) }));
+      return;
+    }
+    if (name === 'medical_notes' || name === 'goals') {
+      setFormData((prev) => ({ ...prev, [name]: value.slice(0, 500) }));
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -156,7 +160,7 @@ function StudentManagementPage() {
         return;
       }
       setEditErrors((prev) => ({ ...prev, name: '' }));
-      setEditForm((prev) => ({ ...prev, name: value }));
+      setEditForm((prev) => ({ ...prev, name: value.slice(0, 100) }));
       return;
     }
     if (name === 'tax_id_cpf') {
@@ -166,7 +170,11 @@ function StudentManagementPage() {
     if (name === 'phone') {
       const hasInvalidChars = /\D/.test(value);
       setEditErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
-      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 15) }));
+      return;
+    }
+    if (name === 'medical_notes' || name === 'goals') {
+      setEditForm((prev) => ({ ...prev, [name]: value.slice(0, 500) }));
       return;
     }
     setEditForm((prev) => ({ ...prev, [name]: value }));
@@ -196,7 +204,7 @@ function StudentManagementPage() {
       ...formData,
       name: formData.name.trim(),
       tax_id_cpf: onlyDigits(formData.tax_id_cpf).slice(0, 11),
-      phone: onlyDigits(formData.phone).slice(0, 20),
+      phone: onlyDigits(formData.phone).slice(0, 15),
       medical_notes: formData.medical_notes.trim(),
       goals: formData.goals.trim(),
     };
@@ -231,7 +239,7 @@ function StudentManagementPage() {
     if (!editingStudent) {
       return;
     }
-    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 20);
+    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 15);
     if (normalizedPhone.length < 10) {
       setEditErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
       pushToast({ type: 'error', message: t('student.invalidForm') });
@@ -304,7 +312,8 @@ function StudentManagementPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={formData.name} onChange={handleChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={formData.name} onChange={handleChange} maxLength={100} />
+                <p className={`text-xs ${formData.name.length >= 100 ? 'text-rose-600' : 'text-slate-400 dark:text-slate-500'}`}>{formData.name.length}/100</p>
                 {formErrors.name ? <p className="text-xs text-rose-600">{t(formErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
@@ -317,7 +326,7 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" maxLength={15} />
                 {formErrors.phone ? <p className="text-xs text-rose-600">{t(formErrors.phone)}</p> : null}
               </label>
             </div>
@@ -332,7 +341,9 @@ function StudentManagementPage() {
                 name="medical_notes"
                 value={formData.medical_notes}
                 onChange={handleChange}
+                maxLength={500}
               />
+              <p className="text-xs text-slate-400 dark:text-slate-500">{formData.medical_notes.length}/500</p>
             </label>
           )}
 
@@ -345,7 +356,9 @@ function StudentManagementPage() {
                 name="goals"
                 value={formData.goals}
                 onChange={handleChange}
+                maxLength={500}
               />
+              <p className="text-xs text-slate-400 dark:text-slate-500">{formData.goals.length}/500</p>
             </label>
           )}
 
@@ -464,7 +477,8 @@ function StudentManagementPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={editForm.name} onChange={handleEditChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={editForm.name} onChange={handleEditChange} maxLength={100} />
+                <p className={`text-xs ${editForm.name.length >= 100 ? 'text-rose-600' : 'text-slate-400 dark:text-slate-500'}`}>{editForm.name.length}/100</p>
                 {editErrors.name ? <p className="text-xs text-rose-600">{t(editErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
@@ -477,16 +491,18 @@ function StudentManagementPage() {
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" maxLength={15} />
                 {editErrors.phone ? <p className="text-xs text-rose-600">{t(editErrors.phone)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
                 {t('student.medicalNotes')}
-                <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="medical_notes" value={editForm.medical_notes} onChange={handleEditChange} />
+                <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="medical_notes" value={editForm.medical_notes} onChange={handleEditChange} maxLength={500} />
+                <p className="text-xs text-slate-400 dark:text-slate-500">{editForm.medical_notes.length}/500</p>
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
                 {t('student.goals')}
-                <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="goals" value={editForm.goals} onChange={handleEditChange} />
+                <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="goals" value={editForm.goals} onChange={handleEditChange} maxLength={500} />
+                <p className="text-xs text-slate-400 dark:text-slate-500">{editForm.goals.length}/500</p>
               </label>
             </div>
 

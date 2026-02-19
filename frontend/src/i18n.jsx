@@ -35,8 +35,10 @@ const translations = {
       nameOnly: 'Use letters and spaces only.',
       phoneOnly: 'Use numbers only.',
       phoneMin10: 'Phone number must have at least 10 digits.',
+      emailInvalid: 'Enter a valid email address.',
     },
     dashboard: {
+      greeting: 'Hello, {{name}}',
       subtitle: 'Overview of Pilates Vision & Progress operations.',
       activeStudents: 'Active Students',
       pendingAssessments: 'Pending Assessments',
@@ -186,6 +188,22 @@ const translations = {
       loadError: 'Could not load students.',
       generated: 'Prototype action: Training plan generated for {{name}}.',
     },
+    login: {
+      title: 'Vision & Progress Pilates Studio',
+      subtitle: 'Professional management and postural analysis for modern Pilates studios.',
+      secureAccess: 'Secure Access',
+      secureAccessDesc: 'Use your username to enter the platform and continue your workflow.',
+      welcome: 'Welcome',
+      greeting: 'Hello, {{name}}',
+      greetingEmpty: 'Hello',
+      username: 'Username',
+      usernamePlaceholder: 'Enter your username',
+      enter: 'Enter',
+    },
+    auth: {
+      preparing: 'Preparing your studio workspace',
+      loadingDashboard: 'Loading your dashboard...',
+    },
   },
   pt: {
     sidebar: {
@@ -219,8 +237,10 @@ const translations = {
       nameOnly: 'Use apenas letras e espaços.',
       phoneOnly: 'Use apenas números.',
       phoneMin10: 'O telefone deve ter pelo menos 10 dígitos.',
+      emailInvalid: 'Informe um e-mail válido.',
     },
     dashboard: {
+      greeting: 'Olá, {{name}}',
       subtitle: 'Visão geral das operações do Pilates Vision & Progress.',
       activeStudents: 'Alunos Ativos',
       pendingAssessments: 'Avaliações Pendentes',
@@ -369,6 +389,22 @@ const translations = {
       generating: 'Gerando...',
       loadError: 'Não foi possível carregar os alunos.',
       generated: 'Ação de protótipo: plano de treino gerado para {{name}}.',
+    },
+    login: {
+      title: 'Vision & Progress Pilates Studio',
+      subtitle: 'Gestão profissional e análise postural para estúdios modernos de Pilates.',
+      secureAccess: 'Acesso Seguro',
+      secureAccessDesc: 'Use seu nome de usuário para entrar na plataforma e continuar seu fluxo.',
+      welcome: 'Boas-vindas',
+      greeting: 'Olá, {{name}}',
+      greetingEmpty: 'Olá',
+      username: 'Nome de Usuário',
+      usernamePlaceholder: 'Digite seu nome de usuário',
+      enter: 'Acessar',
+    },
+    auth: {
+      preparing: 'Preparando seu ambiente do estúdio',
+      loadingDashboard: 'Carregando seu painel...',
     },
   },
 };

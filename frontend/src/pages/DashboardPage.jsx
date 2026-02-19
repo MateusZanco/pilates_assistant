@@ -12,7 +12,7 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
-function DashboardPage({ onNavigate }) {
+function DashboardPage({ onNavigate, user }) {
   const { t } = useI18n();
   const { pushToast } = useToast();
   const [students, setStudents] = useState([]);
@@ -79,6 +79,7 @@ function DashboardPage({ onNavigate }) {
     <section className="space-y-6 animate-fadeSlide">
       <header>
         <h1 className="text-2xl font-bold text-slateSoft dark:text-slate-100">{t('sidebar.dashboard')}</h1>
+        <p className="mt-1 text-base font-medium text-sage">{t('dashboard.greeting', { name: user || '' })}</p>
         <p className="text-sm text-slate-600 dark:text-slate-300">{t('dashboard.subtitle')}</p>
       </header>
 

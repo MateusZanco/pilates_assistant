@@ -21,6 +21,10 @@ function isValidNameInput(value) {
   return /^[A-Za-zÀ-ÖØ-öø-ÿ\s]*$/.test(value);
 }
 
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function InstructorManagementPage() {
   const { t } = useI18n();
   const { pushToast } = useToast();
@@ -34,8 +38,8 @@ function InstructorManagementPage() {
   const [editForm, setEditForm] = useState(initialForm);
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [formErrors, setFormErrors] = useState({ name: '', phone: '' });
-  const [editErrors, setEditErrors] = useState({ name: '', phone: '' });
+  const [formErrors, setFormErrors] = useState({ name: '', phone: '', email: '' });
+  const [editErrors, setEditErrors] = useState({ name: '', phone: '', email: '' });
 
   const loadInstructors = async () => {
     setIsLoading(true);
@@ -61,13 +65,27 @@ function InstructorManagementPage() {
         return;
       }
       setFormErrors((prev) => ({ ...prev, name: '' }));
-      setFormData((prev) => ({ ...prev, name: value }));
+      setFormData((prev) => ({ ...prev, name: value.slice(0, 100) }));
       return;
     }
     if (name === 'phone') {
       const hasInvalidChars = /\D/.test(value);
       setFormErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
-      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 15) }));
+      return;
+    }
+    if (name === 'email') {
+      const nextEmail = value.slice(0, 100);
+      setFormErrors((prev) => ({ ...prev, email: nextEmail && !isValidEmail(nextEmail) ? 'validation.emailInvalid' : '' }));
+      setFormData((prev) => ({ ...prev, email: nextEmail }));
+      return;
+    }
+    if (name === 'specialty') {
+      setFormData((prev) => ({ ...prev, specialty: value.slice(0, 100) }));
+      return;
+    }
+    if (name === 'notes') {
+      setFormData((prev) => ({ ...prev, notes: value.slice(0, 500) }));
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -81,13 +99,27 @@ function InstructorManagementPage() {
         return;
       }
       setEditErrors((prev) => ({ ...prev, name: '' }));
-      setEditForm((prev) => ({ ...prev, name: value }));
+      setEditForm((prev) => ({ ...prev, name: value.slice(0, 100) }));
       return;
     }
     if (name === 'phone') {
       const hasInvalidChars = /\D/.test(value);
       setEditErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
-      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 15) }));
+      return;
+    }
+    if (name === 'email') {
+      const nextEmail = value.slice(0, 100);
+      setEditErrors((prev) => ({ ...prev, email: nextEmail && !isValidEmail(nextEmail) ? 'validation.emailInvalid' : '' }));
+      setEditForm((prev) => ({ ...prev, email: nextEmail }));
+      return;
+    }
+    if (name === 'specialty') {
+      setEditForm((prev) => ({ ...prev, specialty: value.slice(0, 100) }));
+      return;
+    }
+    if (name === 'notes') {
+      setEditForm((prev) => ({ ...prev, notes: value.slice(0, 500) }));
       return;
     }
     setEditForm((prev) => ({ ...prev, [name]: value }));
@@ -95,7 +127,7 @@ function InstructorManagementPage() {
 
   const openEditModal = (instructor) => {
     setEditingInstructor(instructor);
-    setEditErrors({ name: '', phone: '' });
+    setEditErrors({ name: '', phone: '', email: '' });
     setEditForm({
       name: instructor.name,
       phone: instructor.phone,
@@ -112,13 +144,19 @@ function InstructorManagementPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const normalizedPhone = onlyDigits(formData.phone).slice(0, 20);
+    const normalizedPhone = onlyDigits(formData.phone).slice(0, 15);
+    const normalizedEmail = formData.email.trim();
     if (normalizedPhone.length < 10) {
       setFormErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
       pushToast({ type: 'error', message: t('validation.phoneMin10') });
       return;
     }
-    setFormErrors((prev) => ({ ...prev, phone: '' }));
+    if (!isValidEmail(normalizedEmail)) {
+      setFormErrors((prev) => ({ ...prev, email: 'validation.emailInvalid' }));
+      pushToast({ type: 'error', message: t('validation.emailInvalid') });
+      return;
+    }
+    setFormErrors((prev) => ({ ...prev, phone: '', email: '' }));
     setIsSubmitting(true);
     setSaved(false);
     try {
@@ -126,7 +164,7 @@ function InstructorManagementPage() {
         ...formData,
         name: formData.name.trim(),
         phone: normalizedPhone,
-        email: formData.email.trim(),
+        email: normalizedEmail,
         specialty: formData.specialty.trim(),
         notes: formData.notes.trim(),
       });
@@ -146,13 +184,19 @@ function InstructorManagementPage() {
     if (!editingInstructor) {
       return;
     }
-    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 20);
+    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 15);
+    const normalizedEmail = editForm.email.trim();
     if (normalizedPhone.length < 10) {
       setEditErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
       pushToast({ type: 'error', message: t('validation.phoneMin10') });
       return;
     }
-    setEditErrors((prev) => ({ ...prev, phone: '' }));
+    if (!isValidEmail(normalizedEmail)) {
+      setEditErrors((prev) => ({ ...prev, email: 'validation.emailInvalid' }));
+      pushToast({ type: 'error', message: t('validation.emailInvalid') });
+      return;
+    }
+    setEditErrors((prev) => ({ ...prev, phone: '', email: '' }));
 
     setIsUpdating(true);
     try {
@@ -160,7 +204,7 @@ function InstructorManagementPage() {
         ...editForm,
         name: editForm.name.trim(),
         phone: normalizedPhone,
-        email: editForm.email.trim(),
+        email: normalizedEmail,
         specialty: editForm.specialty.trim(),
         notes: editForm.notes.trim(),
       });
@@ -205,25 +249,62 @@ function InstructorManagementPage() {
         <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('student.name')}
-            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={formData.name} onChange={handleChange} required />
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              maxLength={100}
+              required
+            />
+            <p className={`text-xs ${formData.name.length >= 100 ? 'text-rose-600' : 'text-slate-400 dark:text-slate-500'}`}>{formData.name.length}/100</p>
             {formErrors.name ? <p className="text-xs text-rose-600">{t(formErrors.name)}</p> : null}
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('student.phone')}
-            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" required />
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              inputMode="numeric"
+              maxLength={15}
+              required
+            />
             {formErrors.phone ? <p className="text-xs text-rose-600">{t(formErrors.phone)}</p> : null}
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('common.email')}
-            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" type="email" name="email" value={formData.email} onChange={handleChange} required />
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              maxLength={100}
+              required
+            />
+            {formErrors.email ? <p className="text-xs text-rose-600">{t(formErrors.email)}</p> : null}
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('instructor.specialty')}
-            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="specialty" value={formData.specialty} onChange={handleChange} />
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              name="specialty"
+              value={formData.specialty}
+              onChange={handleChange}
+              maxLength={100}
+            />
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
             {t('instructor.notes')}
-            <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="notes" value={formData.notes} onChange={handleChange} />
+            <textarea
+              className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              maxLength={500}
+            />
           </label>
           <div className="md:col-span-2">
             <button
@@ -308,25 +389,59 @@ function InstructorManagementPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={editForm.name} onChange={handleEditChange} />
+                <input
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  maxLength={100}
+                />
+                <p className={`text-xs ${editForm.name.length >= 100 ? 'text-rose-600' : 'text-slate-400 dark:text-slate-500'}`}>{editForm.name.length}/100</p>
                 {editErrors.name ? <p className="text-xs text-rose-600">{t(editErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" />
+                <input
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="phone"
+                  value={editForm.phone}
+                  onChange={handleEditChange}
+                  inputMode="numeric"
+                  maxLength={15}
+                />
                 {editErrors.phone ? <p className="text-xs text-rose-600">{t(editErrors.phone)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('common.email')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" type="email" name="email" value={editForm.email} onChange={handleEditChange} />
+                <input
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  maxLength={100}
+                />
+                {editErrors.email ? <p className="text-xs text-rose-600">{t(editErrors.email)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('instructor.specialty')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="specialty" value={editForm.specialty} onChange={handleEditChange} />
+                <input
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="specialty"
+                  value={editForm.specialty}
+                  onChange={handleEditChange}
+                  maxLength={100}
+                />
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
                 {t('instructor.notes')}
-                <textarea className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="notes" value={editForm.notes} onChange={handleEditChange} />
+                <textarea
+                  className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  name="notes"
+                  value={editForm.notes}
+                  onChange={handleEditChange}
+                  maxLength={500}
+                />
               </label>
             </div>
 

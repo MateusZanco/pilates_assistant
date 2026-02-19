@@ -1,7 +1,7 @@
 import { Globe, Menu, Moon, Sun } from 'lucide-react';
 import { useI18n } from '../i18n';
 
-function TopHeader({ theme, onToggleTheme, onMenuClick }) {
+function TopHeader({ theme, onToggleTheme, onMenuClick, onLogout, user }) {
   const { language, changeLanguage, t } = useI18n();
 
   return (
@@ -17,6 +17,10 @@ function TopHeader({ theme, onToggleTheme, onMenuClick }) {
         </button>
 
         <div className="ml-auto flex items-center gap-2">
+          <p className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
+            {t('dashboard.greeting', { name: user || '' })}
+          </p>
+
           <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800">
             <Globe size={14} className="text-slate-500 dark:text-slate-300" />
             <button
@@ -47,6 +51,14 @@ function TopHeader({ theme, onToggleTheme, onMenuClick }) {
           >
             {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             <span className="hidden sm:inline">{theme === 'dark' ? t('sidebar.lightMode') : t('sidebar.darkMode')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/40"
+          >
+            Sair
           </button>
         </div>
       </div>
