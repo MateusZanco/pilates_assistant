@@ -50,9 +50,9 @@ function App() {
       case 'plans':
         return <TrainingPlansPage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={handleNavigate} />;
     }
-  }, [activePage]);
+  }, [activePage, handleNavigate]);
 
   return (
     <I18nProvider>

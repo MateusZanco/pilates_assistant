@@ -13,6 +13,14 @@ const initialForm = {
   notes: '',
 };
 
+function onlyDigits(value) {
+  return value.replace(/\D/g, '');
+}
+
+function isValidNameInput(value) {
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ\s]*$/.test(value);
+}
+
 function InstructorManagementPage() {
   const { t } = useI18n();
   const { pushToast } = useToast();
@@ -26,6 +34,8 @@ function InstructorManagementPage() {
   const [editForm, setEditForm] = useState(initialForm);
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [formErrors, setFormErrors] = useState({ name: '', phone: '' });
+  const [editErrors, setEditErrors] = useState({ name: '', phone: '' });
 
   const loadInstructors = async () => {
     setIsLoading(true);
@@ -45,16 +55,47 @@ function InstructorManagementPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'name') {
+      if (!isValidNameInput(value)) {
+        setFormErrors((prev) => ({ ...prev, name: 'validation.nameOnly' }));
+        return;
+      }
+      setFormErrors((prev) => ({ ...prev, name: '' }));
+      setFormData((prev) => ({ ...prev, name: value }));
+      return;
+    }
+    if (name === 'phone') {
+      const hasInvalidChars = /\D/.test(value);
+      setFormErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
+      setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'name') {
+      if (!isValidNameInput(value)) {
+        setEditErrors((prev) => ({ ...prev, name: 'validation.nameOnly' }));
+        return;
+      }
+      setEditErrors((prev) => ({ ...prev, name: '' }));
+      setEditForm((prev) => ({ ...prev, name: value }));
+      return;
+    }
+    if (name === 'phone') {
+      const hasInvalidChars = /\D/.test(value);
+      setEditErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
+      setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
+      return;
+    }
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const openEditModal = (instructor) => {
     setEditingInstructor(instructor);
+    setEditErrors({ name: '', phone: '' });
     setEditForm({
       name: instructor.name,
       phone: instructor.phone,
@@ -71,10 +112,24 @@ function InstructorManagementPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const normalizedPhone = onlyDigits(formData.phone).slice(0, 20);
+    if (normalizedPhone.length < 10) {
+      setFormErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
+      pushToast({ type: 'error', message: t('validation.phoneMin10') });
+      return;
+    }
+    setFormErrors((prev) => ({ ...prev, phone: '' }));
     setIsSubmitting(true);
     setSaved(false);
     try {
-      await createInstructor(formData);
+      await createInstructor({
+        ...formData,
+        name: formData.name.trim(),
+        phone: normalizedPhone,
+        email: formData.email.trim(),
+        specialty: formData.specialty.trim(),
+        notes: formData.notes.trim(),
+      });
       setSaved(true);
       setFormData(initialForm);
       await loadInstructors();
@@ -91,10 +146,24 @@ function InstructorManagementPage() {
     if (!editingInstructor) {
       return;
     }
+    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 20);
+    if (normalizedPhone.length < 10) {
+      setEditErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
+      pushToast({ type: 'error', message: t('validation.phoneMin10') });
+      return;
+    }
+    setEditErrors((prev) => ({ ...prev, phone: '' }));
 
     setIsUpdating(true);
     try {
-      await updateInstructor(editingInstructor.id, editForm);
+      await updateInstructor(editingInstructor.id, {
+        ...editForm,
+        name: editForm.name.trim(),
+        phone: normalizedPhone,
+        email: editForm.email.trim(),
+        specialty: editForm.specialty.trim(),
+        notes: editForm.notes.trim(),
+      });
       await loadInstructors();
       pushToast({ type: 'success', message: t('instructor.updated') });
       closeEditModal();
@@ -137,10 +206,12 @@ function InstructorManagementPage() {
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('student.name')}
             <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={formData.name} onChange={handleChange} required />
+            {formErrors.name ? <p className="text-xs text-rose-600">{t(formErrors.name)}</p> : null}
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('student.phone')}
-            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} required />
+            <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" required />
+            {formErrors.phone ? <p className="text-xs text-rose-600">{t(formErrors.phone)}</p> : null}
           </label>
           <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
             {t('common.email')}
@@ -238,10 +309,12 @@ function InstructorManagementPage() {
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
                 <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={editForm.name} onChange={handleEditChange} />
+                {editErrors.name ? <p className="text-xs text-rose-600">{t(editErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
-                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} />
+                <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" />
+                {editErrors.phone ? <p className="text-xs text-rose-600">{t(editErrors.phone)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('common.email')}

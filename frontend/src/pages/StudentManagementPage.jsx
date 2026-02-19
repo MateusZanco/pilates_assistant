@@ -18,6 +18,10 @@ function onlyDigits(value) {
   return value.replace(/\D/g, '');
 }
 
+function isValidNameInput(value) {
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ\s]*$/.test(value);
+}
+
 function formatCpf(value) {
   const digits = onlyDigits(value).slice(0, 11);
   const parts = [
@@ -79,6 +83,8 @@ function StudentManagementPage() {
   const [editForm, setEditForm] = useState(initialForm);
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [formErrors, setFormErrors] = useState({ name: '', phone: '' });
+  const [editErrors, setEditErrors] = useState({ name: '', phone: '' });
   const steps = [t('student.stepPersonal'), t('student.stepMedical'), t('student.stepGoals')];
 
   const canContinue = useMemo(() => {
@@ -89,7 +95,7 @@ function StudentManagementPage() {
         formData.name.trim().length >= 2 &&
         cpfDigits.length === 11 &&
         !!formData.date_of_birth &&
-        phoneDigits.length >= 8
+        phoneDigits.length >= 10
       );
     }
     if (step === 1) {
@@ -120,11 +126,22 @@ function StudentManagementPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'name') {
+      if (!isValidNameInput(value)) {
+        setFormErrors((prev) => ({ ...prev, name: 'validation.nameOnly' }));
+        return;
+      }
+      setFormErrors((prev) => ({ ...prev, name: '' }));
+      setFormData((prev) => ({ ...prev, name: value }));
+      return;
+    }
     if (name === 'tax_id_cpf') {
       setFormData((prev) => ({ ...prev, tax_id_cpf: formatCpf(value) }));
       return;
     }
     if (name === 'phone') {
+      const hasInvalidChars = /\D/.test(value);
+      setFormErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
       setFormData((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
       return;
     }
@@ -133,11 +150,22 @@ function StudentManagementPage() {
 
   const handleEditChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'name') {
+      if (!isValidNameInput(value)) {
+        setEditErrors((prev) => ({ ...prev, name: 'validation.nameOnly' }));
+        return;
+      }
+      setEditErrors((prev) => ({ ...prev, name: '' }));
+      setEditForm((prev) => ({ ...prev, name: value }));
+      return;
+    }
     if (name === 'tax_id_cpf') {
       setEditForm((prev) => ({ ...prev, tax_id_cpf: formatCpf(value) }));
       return;
     }
     if (name === 'phone') {
+      const hasInvalidChars = /\D/.test(value);
+      setEditErrors((prev) => ({ ...prev, phone: hasInvalidChars ? 'validation.phoneOnly' : '' }));
       setEditForm((prev) => ({ ...prev, phone: onlyDigits(value).slice(0, 20) }));
       return;
     }
@@ -146,9 +174,10 @@ function StudentManagementPage() {
 
   const openEditModal = (student) => {
     setEditingStudent(student);
+    setEditErrors({ name: '', phone: '' });
     setEditForm({
       name: student.name,
-      tax_id_cpf: student.tax_id_cpf,
+      tax_id_cpf: formatCpf(student.tax_id_cpf),
       date_of_birth: student.date_of_birth,
       phone: student.phone,
       medical_notes: student.medical_notes || '',
@@ -172,10 +201,14 @@ function StudentManagementPage() {
       goals: formData.goals.trim(),
     };
 
-    if (!payload.name || payload.name.length < 2 || !payload.tax_id_cpf || !payload.date_of_birth || payload.phone.length < 8) {
+    if (!payload.name || payload.name.length < 2 || !payload.tax_id_cpf || !payload.date_of_birth || payload.phone.length < 10) {
+      if (payload.phone.length < 10) {
+        setFormErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
+      }
       pushToast({ type: 'error', message: t('student.invalidForm') });
       return;
     }
+    setFormErrors((prev) => ({ ...prev, phone: '' }));
 
     setIsSubmitting(true);
     setSubmitted(false);
@@ -198,6 +231,13 @@ function StudentManagementPage() {
     if (!editingStudent) {
       return;
     }
+    const normalizedPhone = onlyDigits(editForm.phone).slice(0, 20);
+    if (normalizedPhone.length < 10) {
+      setEditErrors((prev) => ({ ...prev, phone: 'validation.phoneMin10' }));
+      pushToast({ type: 'error', message: t('student.invalidForm') });
+      return;
+    }
+    setEditErrors((prev) => ({ ...prev, phone: '' }));
 
     setIsUpdating(true);
     try {
@@ -205,7 +245,7 @@ function StudentManagementPage() {
         ...editForm,
         name: editForm.name.trim(),
         tax_id_cpf: onlyDigits(editForm.tax_id_cpf).slice(0, 11),
-        phone: onlyDigits(editForm.phone).slice(0, 20),
+        phone: normalizedPhone,
         medical_notes: editForm.medical_notes.trim(),
         goals: editForm.goals.trim(),
       });
@@ -265,6 +305,7 @@ function StudentManagementPage() {
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
                 <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={formData.name} onChange={handleChange} />
+                {formErrors.name ? <p className="text-xs text-rose-600">{t(formErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.cpf')}
@@ -277,6 +318,7 @@ function StudentManagementPage() {
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
                 <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={formData.phone} onChange={handleChange} inputMode="numeric" />
+                {formErrors.phone ? <p className="text-xs text-rose-600">{t(formErrors.phone)}</p> : null}
               </label>
             </div>
           )}
@@ -376,7 +418,7 @@ function StudentManagementPage() {
               {students.map((student) => (
                 <tr key={student.id} className="border-t border-slate-100 dark:border-slate-700">
                   <td className="py-3">{student.name}</td>
-                  <td className="py-3">{student.tax_id_cpf}</td>
+                  <td className="py-3">{formatCpf(student.tax_id_cpf)}</td>
                   <td className="py-3">{student.phone}</td>
                   <td className="py-3">{student.date_of_birth}</td>
                   <td className="py-3">
@@ -423,6 +465,7 @@ function StudentManagementPage() {
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.name')}
                 <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="name" value={editForm.name} onChange={handleEditChange} />
+                {editErrors.name ? <p className="text-xs text-rose-600">{t(editErrors.name)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.cpf')}
@@ -435,6 +478,7 @@ function StudentManagementPage() {
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                 {t('student.phone')}
                 <input className="w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" name="phone" value={editForm.phone} onChange={handleEditChange} inputMode="numeric" />
+                {editErrors.phone ? <p className="text-xs text-rose-600">{t(editErrors.phone)}</p> : null}
               </label>
               <label className="space-y-1 text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
                 {t('student.medicalNotes')}

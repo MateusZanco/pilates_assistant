@@ -12,6 +12,12 @@ const detectedPoints = [
   { top: '58%', left: '46%', color: '#0ea5e9' },
 ];
 
+const deviationTranslationMap = {
+  'Mild Scoliosis': 'analysis.deviationScoliosis',
+  'Forward Head Posture': 'analysis.deviationForwardHead',
+  'Shoulder Protraction': 'analysis.deviationShoulderProtraction',
+};
+
 function PosturalAnalysisPage() {
   const { t } = useI18n();
   const { pushToast } = useToast();
@@ -121,7 +127,8 @@ function PosturalAnalysisPage() {
           {result ? (
             <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-200">
               <p>
-                <span className="font-semibold">{t('analysis.status')}:</span> {result.status}
+                <span className="font-semibold">{t('analysis.status')}:</span>{' '}
+                {result.status === 'success' ? t('analysis.statusSuccess') : result.status}
               </p>
               <p>
                 <span className="font-semibold">{t('analysis.score')}:</span> {result.score}
@@ -131,7 +138,7 @@ function PosturalAnalysisPage() {
                 <ul className="mt-2 space-y-1">
                   {result.deviations.map((deviation) => (
                     <li key={deviation} className="rounded-lg bg-white px-3 py-2 dark:bg-slate-900 dark:text-slate-100">
-                      {deviation}
+                      {deviationTranslationMap[deviation] ? t(deviationTranslationMap[deviation]) : deviation}
                     </li>
                   ))}
                 </ul>
