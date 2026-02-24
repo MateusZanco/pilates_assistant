@@ -30,9 +30,9 @@ function DashboardPage({ onNavigate, user }) {
           fetchAppointments(today),
           fetchInstructors(),
         ]);
-        setStudents(studentsRes.data);
-        setAppointments(appointmentsRes.data);
-        setInstructors(instructorsRes.data);
+        setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
+        setAppointments(Array.isArray(appointmentsRes.data) ? appointmentsRes.data : []);
+        setInstructors(Array.isArray(instructorsRes.data) ? instructorsRes.data : []);
       } catch {
         setStudents([]);
         setAppointments([]);

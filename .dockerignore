@@ -7,6 +7,6 @@
 **/.venv
 **/node_modules
 **/dist
-backend/pilates_vision_progress.db
+app/backend/pilates_vision_progress.db
 *.db
 docker-compose.yml

@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ./app/backend
       dockerfile: Dockerfile
     container_name: pilates_backend
     environment:
@@ -13,7 +13,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./app/frontend
       dockerfile: Dockerfile
     container_name: pilates_frontend
     depends_on:

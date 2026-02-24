@@ -3,7 +3,7 @@
 Thumbs.db
 
 # Python
-backend/.venv/
+app/backend/.venv/
 .venv/
 __pycache__/
 *.py[cod]
@@ -20,13 +20,13 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
-backend/pilates_vision_progress.db
+app/backend/pilates_vision_progress.db
 
 # Node / Frontend
 node_modules/
-frontend/node_modules/
+app/frontend/node_modules/
 dist/
-frontend/dist/
+app/frontend/dist/
 .npm/
 
 # Build logs and env

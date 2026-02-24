@@ -1,9 +1,9 @@
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
-COPY frontend/package.json ./
+COPY app/frontend/package.json ./
 RUN npm install
-COPY frontend/ ./
+COPY app/frontend/ ./
 RUN npm run build
 
 FROM python:3.12-slim AS runtime
@@ -14,10 +14,10 @@ ENV PORT=7860
 ENV DATABASE_URL=sqlite:////data/pilates_vision_progress.db
 
 WORKDIR /app/backend
-COPY backend/requirements.txt ./
+COPY app/backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ ./
+COPY app/backend/ ./
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 EXPOSE 7860

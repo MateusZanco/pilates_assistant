@@ -1,0 +1,3 @@
+# Prompt de sistema principal
+
+Defina aqui o system prompt principal usado pelo projeto.
