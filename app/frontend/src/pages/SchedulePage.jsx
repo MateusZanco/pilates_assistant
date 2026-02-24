@@ -124,6 +124,19 @@ function SchedulePage() {
     return map;
   }, [instructors]);
 
+  const getStudentWorkoutPlan = (studentId) => {
+    const student = studentMap.get(studentId);
+    if (!student?.latest_workout_plan) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(student.latest_workout_plan);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
   const filteredStudents = useMemo(() => {
     const term = studentSearch.trim().toLowerCase();
     if (!term) {
@@ -317,6 +330,9 @@ function SchedulePage() {
                                 : t('schedule.statusCanceled')}
                           </p>
                           <p>{studentMap.get(appointment.student_id)?.name || t('schedule.student')}</p>
+                          {getStudentWorkoutPlan(appointment.student_id).length > 0 ? (
+                            <p className="text-[11px] font-medium">{getStudentWorkoutPlan(appointment.student_id).length} treinos</p>
+                          ) : null}
                         </div>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
@@ -438,6 +454,19 @@ function SchedulePage() {
                         : t('schedule.statusCanceled')}
                   </span>
                 </p>
+                {getStudentWorkoutPlan(detailAppointment.student_id).length > 0 ? (
+                  <div className="pt-2">
+                    <p className="mb-2 font-semibold text-slateSoft dark:text-slate-100">Treinos do aluno</p>
+                    <div className="space-y-2">
+                      {getStudentWorkoutPlan(detailAppointment.student_id).map((exercise, index) => (
+                        <div key={`${exercise.exercise_name}-${index}`} className="rounded-lg bg-paper px-3 py-2 dark:bg-slate-800">
+                          <p className="font-medium">{exercise.exercise_name}</p>
+                          <p className="text-xs">{exercise.sets} x {exercise.reps}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="mt-4 space-y-4 text-sm">

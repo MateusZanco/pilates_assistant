@@ -34,4 +34,6 @@ export const analyzeImage = (formData) =>
     },
   });
 
+export const generateWorkoutPlan = (payload) => api.post('/generate_plan', payload);
+
 export default api;

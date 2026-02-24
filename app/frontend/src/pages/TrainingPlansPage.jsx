@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { fetchStudents } from '../api';
+import { fetchStudents, generateWorkoutPlan } from '../api';
 import { useI18n } from '../i18n';
 import { useToast } from '../components/ToastProvider';
 
@@ -20,27 +20,28 @@ function getAge(dateOfBirth) {
 }
 
 function TrainingPlansPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { pushToast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [students, setStudents] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [generatedPlan, setGeneratedPlan] = useState([]);
+
+  const loadStudents = async () => {
+    setIsLoadingStudents(true);
+    try {
+      const response = await fetchStudents('');
+      setStudents(Array.isArray(response.data) ? response.data : []);
+    } catch {
+      setStudents([]);
+      pushToast({ type: 'error', message: t('plans.loadError') });
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
 
   useEffect(() => {
-    const loadStudents = async () => {
-      setIsLoadingStudents(true);
-      try {
-        const response = await fetchStudents('');
-        setStudents(response.data);
-      } catch {
-        setStudents([]);
-        pushToast({ type: 'error', message: t('plans.loadError') });
-      } finally {
-        setIsLoadingStudents(false);
-      }
-    };
-
     loadStudents();
   }, [pushToast, t]);
 
@@ -60,15 +61,36 @@ function TrainingPlansPage() {
     }
   }, [selectedStudent]);
 
-  const handleGenerate = () => {
+  const latestWorkoutPlan = useMemo(() => {
+    if (!selectedStudent?.latest_workout_plan) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(selectedStudent.latest_workout_plan);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [selectedStudent]);
+
+  const handleGenerate = async () => {
     if (!selectedStudent) {
       return;
     }
+
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      const response = await generateWorkoutPlan({ student_id: selectedStudent.id, language });
+      const plan = Array.isArray(response.data?.workout_plan) ? response.data.workout_plan : [];
+      setGeneratedPlan(plan);
+      await loadStudents();
       pushToast({ type: 'success', message: t('plans.generated', { name: selectedStudent.name }) });
-    }, 1200);
+    } catch (error) {
+      const message = error?.response?.data?.detail || t('plans.loadError');
+      pushToast({ type: 'error', message });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -133,6 +155,21 @@ function TrainingPlansPage() {
           {isGenerating ? <Loader2 className="animate-spin" size={16} /> : null}
           {isGenerating ? t('plans.generating') : t('plans.generate')}
         </button>
+
+        {(generatedPlan.length > 0 || latestWorkoutPlan.length > 0) ? (
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold text-slateSoft dark:text-slate-100">Workout Plan (5 exercises)</h3>
+            {(generatedPlan.length > 0 ? generatedPlan : latestWorkoutPlan).map((exercise, index) => (
+              <div key={`${exercise.exercise_name}-${index}`} className="rounded-xl border border-sage/30 bg-paper p-3 text-sm dark:bg-slate-800">
+                <p className="font-semibold text-slateSoft dark:text-slate-100">{exercise.exercise_name}</p>
+                <p className="text-slate-600 dark:text-slate-300">
+                  {exercise.sets} x {exercise.reps}
+                </p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{exercise.clinical_reason}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </article>
     </section>
   );

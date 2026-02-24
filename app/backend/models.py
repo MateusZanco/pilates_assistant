@@ -22,6 +22,7 @@ class Student(Base):
     goals: Mapped[str] = mapped_column(Text, default="")
     latest_detected_deviations: Mapped[str] = mapped_column(Text, default="[]")
     latest_clinical_analysis: Mapped[str] = mapped_column(Text, default="")
+    latest_workout_plan: Mapped[str] = mapped_column(Text, default="[]")
 
     assessments: Mapped[list[Assessment]] = relationship(back_populates="student", cascade="all, delete-orphan")
     appointments: Mapped[list[Appointment]] = relationship(back_populates="student", cascade="all, delete-orphan")

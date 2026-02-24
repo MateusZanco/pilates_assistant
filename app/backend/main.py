@@ -19,6 +19,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from agents.pipeline import run_postural_pipeline
+from agents.workout_agent import generate_workout_plan
 import models
 import schemas
 from database import engine, get_db
@@ -33,6 +34,8 @@ def ensure_student_analysis_columns() -> None:
             conn.execute(text("ALTER TABLE students ADD COLUMN latest_detected_deviations TEXT DEFAULT '[]'"))
         if "latest_clinical_analysis" not in existing_columns:
             conn.execute(text("ALTER TABLE students ADD COLUMN latest_clinical_analysis TEXT DEFAULT ''"))
+        if "latest_workout_plan" not in existing_columns:
+            conn.execute(text("ALTER TABLE students ADD COLUMN latest_workout_plan TEXT DEFAULT '[]'"))
 
 
 ensure_student_analysis_columns()
@@ -353,6 +356,51 @@ async def analyze_posture(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/generate_plan", response_model=schemas.WorkoutPlanResponse)
+async def generate_plan(payload: schemas.WorkoutPlanRequest, db: Session = Depends(get_db)) -> schemas.WorkoutPlanResponse:
+    student = db.get(models.Student, payload.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    try:
+        deviations = json.loads(student.latest_detected_deviations or "[]")
+        if not isinstance(deviations, list):
+            deviations = []
+    except json.JSONDecodeError:
+        deviations = []
+
+    clinical_analysis = student.latest_clinical_analysis.strip()
+    if not clinical_analysis:
+        clinical_analysis = "Detected deviations: " + (", ".join(deviations) if deviations else "No recent postural analysis")
+
+    student_profile = {
+        "student_id": student.id,
+        "name": student.name,
+        "age": (datetime.utcnow().date().year - student.date_of_birth.year),
+        "goal": student.goals or "",
+        "medical_notes": student.medical_notes or "",
+        "phone": student.phone,
+        "tax_id_cpf": student.tax_id_cpf,
+        "latest_detected_deviations": deviations,
+        "latest_clinical_analysis": student.latest_clinical_analysis or "",
+    }
+
+    try:
+        result = await run_in_threadpool(
+            generate_workout_plan,
+            student_profile,
+            clinical_analysis,
+            payload.language,
+        )
+        student.latest_workout_plan = json.dumps(result.get("workout_plan", []), ensure_ascii=False)
+        db.commit()
+        return schemas.WorkoutPlanResponse(**result)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to generate workout plan: {exc}") from exc
 
 
 frontend_dist = Path(__file__).resolve().parents[1] / "frontend" / "dist"

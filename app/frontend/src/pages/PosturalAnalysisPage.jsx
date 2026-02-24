@@ -117,25 +117,29 @@ function PosturalAnalysisPage() {
             </span>
           </label>
 
-          <div className="relative overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800" style={{ minHeight: 340 }}>
-            {preview ? <img src={preview} alt={t('analysis.previewAlt')} className="h-full w-full object-cover" /> : null}
+          <div className="rounded-2xl bg-slate-100 p-2 dark:bg-slate-800">
+            <div className="flex h-[360px] items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800 md:h-[420px]">
+              <div className="relative inline-block">
+                {preview ? <img src={preview} alt={t('analysis.previewAlt')} className="block max-h-[340px] w-auto max-w-full object-contain md:max-h-[400px]" /> : null}
 
-            {isAnalyzing && preview ? (
-              <>
-                <div className="absolute inset-0 bg-emerald-100/20" />
-                <div className="absolute left-0 right-0 h-1 bg-emerald-400/90 shadow-[0_0_20px_rgba(74,222,128,0.9)] animate-scan" />
-              </>
-            ) : null}
+                {isAnalyzing && preview ? (
+                  <>
+                    <div className="absolute inset-0 bg-emerald-100/20" />
+                    <div className="absolute left-0 right-0 h-1 bg-emerald-400/90 shadow-[0_0_20px_rgba(74,222,128,0.9)] animate-scan" />
+                  </>
+                ) : null}
 
-            {result && preview
-              ? landmarkPoints.map((point) => (
-                  <div
-                    key={point.id}
-                    className="absolute h-2 w-2 rounded-full border border-white bg-emerald-500/90"
-                    style={{ top: `${point.y * 100}%`, left: `${point.x * 100}%` }}
-                  />
-                ))
-              : null}
+                {result && preview
+                  ? landmarkPoints.map((point) => (
+                      <div
+                        key={point.id}
+                        className="absolute h-2 w-2 rounded-full border border-white bg-emerald-500/90"
+                        style={{ top: `${point.y * 100}%`, left: `${point.x * 100}%` }}
+                      />
+                    ))
+                  : null}
+              </div>
+            </div>
           </div>
 
           <button

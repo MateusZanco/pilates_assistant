@@ -32,6 +32,7 @@ class StudentRead(StudentBase):
     goals: str
     latest_detected_deviations: str
     latest_clinical_analysis: str
+    latest_workout_plan: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -102,3 +103,19 @@ class AppointmentRead(AppointmentBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WorkoutPlanRequest(BaseModel):
+    student_id: int
+    language: Literal["pt", "en"] = "en"
+
+
+class WorkoutExercise(BaseModel):
+    exercise_name: str
+    sets: str
+    reps: str
+    clinical_reason: str
+
+
+class WorkoutPlanResponse(BaseModel):
+    workout_plan: list[WorkoutExercise]
