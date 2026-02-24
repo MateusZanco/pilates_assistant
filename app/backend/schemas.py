@@ -30,6 +30,8 @@ class StudentUpdate(BaseModel):
 class StudentRead(StudentBase):
     id: int
     goals: str
+    latest_detected_deviations: str
+    latest_clinical_analysis: str
 
     model_config = ConfigDict(from_attributes=True)
 

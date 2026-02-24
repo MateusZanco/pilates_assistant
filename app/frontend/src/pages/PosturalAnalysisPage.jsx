@@ -1,31 +1,39 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, UploadCloud } from 'lucide-react';
 
-import { analyzeImage } from '../api';
+import { analyzeImage, fetchStudents } from '../api';
 import { useI18n } from '../i18n';
 import { useToast } from '../components/ToastProvider';
 
-const detectedPoints = [
-  { top: '18%', left: '52%', color: '#f97316' },
-  { top: '31%', left: '49%', color: '#f59e0b' },
-  { top: '44%', left: '54%', color: '#10b981' },
-  { top: '58%', left: '46%', color: '#0ea5e9' },
-];
-
-const deviationTranslationMap = {
-  'Mild Scoliosis': 'analysis.deviationScoliosis',
-  'Forward Head Posture': 'analysis.deviationForwardHead',
-  'Shoulder Protraction': 'analysis.deviationShoulderProtraction',
-};
-
 function PosturalAnalysisPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { pushToast } = useToast();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const landmarkPoints = Array.isArray(result?.landmarks_2d) ? result.landmarks_2d : [];
+  const detectedDeviations = Array.isArray(result?.detected_deviations) ? result.detected_deviations : [];
+
+  useEffect(() => {
+    const loadStudents = async () => {
+      setIsLoadingStudents(true);
+      try {
+        const response = await fetchStudents('');
+        setStudents(Array.isArray(response.data) ? response.data : []);
+      } catch {
+        setStudents([]);
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    };
+
+    loadStudents();
+  }, []);
 
   const handleFile = (event) => {
     const uploadedFile = event.target.files?.[0];
@@ -44,6 +52,10 @@ function PosturalAnalysisPage() {
       pushToast({ type: 'error', message: t('analysis.uploadRequired') });
       return;
     }
+    if (!selectedStudentId) {
+      pushToast({ type: 'error', message: t('plans.chooseStudent') });
+      return;
+    }
 
     setIsAnalyzing(true);
     setResult(null);
@@ -56,6 +68,8 @@ function PosturalAnalysisPage() {
     try {
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('student_id', selectedStudentId);
+      formData.append('language', language);
       const response = await analyzeImage(formData);
       setProgress(100);
       setResult(response.data);
@@ -78,6 +92,23 @@ function PosturalAnalysisPage() {
 
       <article className="grid gap-6 rounded-2xl bg-white/80 p-6 shadow-card backdrop-blur-sm dark:bg-slate-900/85 xl:grid-cols-[1.2fr_1fr]">
         <div className="space-y-4">
+          <label className="block text-sm text-slate-600 dark:text-slate-300">
+            {t('plans.selectStudent')}
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              value={selectedStudentId}
+              onChange={(event) => setSelectedStudentId(event.target.value)}
+              disabled={isLoadingStudents || isAnalyzing}
+            >
+              <option value="">{isLoadingStudents ? t('plans.loadingStudents') : t('plans.chooseStudent')}</option>
+              {students.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className="flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-sage/60 bg-paper p-4 text-center dark:bg-slate-800">
             <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
             <span className="inline-flex items-center gap-2 text-slateSoft dark:text-slate-100">
@@ -97,11 +128,11 @@ function PosturalAnalysisPage() {
             ) : null}
 
             {result && preview
-              ? detectedPoints.map((point, index) => (
+              ? landmarkPoints.map((point) => (
                   <div
-                    key={index}
-                    className="absolute h-3 w-3 rounded-full border border-white"
-                    style={{ top: point.top, left: point.left, backgroundColor: point.color }}
+                    key={point.id}
+                    className="absolute h-2 w-2 rounded-full border border-white bg-emerald-500/90"
+                    style={{ top: `${point.y * 100}%`, left: `${point.x * 100}%` }}
                   />
                 ))
               : null}
@@ -111,7 +142,7 @@ function PosturalAnalysisPage() {
             type="button"
             onClick={handleAnalyze}
             className="inline-flex items-center gap-2 rounded-xl bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            disabled={isAnalyzing}
+            disabled={isAnalyzing || !selectedStudentId}
           >
             {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : null}
             {isAnalyzing ? t('analysis.analyzing') : t('analysis.analyze')}
@@ -130,18 +161,21 @@ function PosturalAnalysisPage() {
                 <span className="font-semibold">{t('analysis.status')}:</span>{' '}
                 {result.status === 'success' ? t('analysis.statusSuccess') : result.status}
               </p>
-              <p>
-                <span className="font-semibold">{t('analysis.score')}:</span> {result.score}
-              </p>
               <div>
                 <p className="font-semibold">{t('analysis.deviations')}</p>
                 <ul className="mt-2 space-y-1">
-                  {result.deviations.map((deviation) => (
+                  {detectedDeviations.map((deviation) => (
                     <li key={deviation} className="rounded-lg bg-white px-3 py-2 dark:bg-slate-900 dark:text-slate-100">
-                      {deviationTranslationMap[deviation] ? t(deviationTranslationMap[deviation]) : deviation}
+                      {deviation}
                     </li>
                   ))}
                 </ul>
+              </div>
+              <div>
+                <p className="font-semibold">Clinical Analysis</p>
+                <p className="mt-2 rounded-lg bg-white px-3 py-2 dark:bg-slate-900 dark:text-slate-100">
+                  {result.clinical_analysis || '-'}
+                </p>
               </div>
             </div>
           ) : (

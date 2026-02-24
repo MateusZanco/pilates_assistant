@@ -1,21 +1,41 @@
 from __future__ import annotations
 
-import asyncio
+import json
+import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlalchemy.orm import Session
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from agents.pipeline import run_postural_pipeline
 import models
 import schemas
 from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
+
+
+def ensure_student_analysis_columns() -> None:
+    with engine.begin() as conn:
+        existing_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(students)"))}
+        if "latest_detected_deviations" not in existing_columns:
+            conn.execute(text("ALTER TABLE students ADD COLUMN latest_detected_deviations TEXT DEFAULT '[]'"))
+        if "latest_clinical_analysis" not in existing_columns:
+            conn.execute(text("ALTER TABLE students ADD COLUMN latest_clinical_analysis TEXT DEFAULT ''"))
+
+
+ensure_student_analysis_columns()
 
 app = FastAPI(title="Pilates Vision & Progress API", version="0.2.0")
 
@@ -304,16 +324,35 @@ def create_assessment(assessment: schemas.AssessmentCreate, db: Session = Depend
 
 
 @app.post("/analyze")
-async def analyze_posture(image: UploadFile = File(...)) -> dict[str, object]:
+async def analyze_posture(
+    image: UploadFile = File(...),
+    student_id: int = Form(...),
+    language: Literal["pt", "en"] = Form(default="en"),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
 
-    await asyncio.sleep(3)
-    return {
-        "status": "success",
-        "deviations": ["Mild Scoliosis", "Forward Head Posture", "Shoulder Protraction"],
-        "score": 78,
-    }
+    student = db.get(models.Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+
+    try:
+        result = await run_in_threadpool(run_postural_pipeline, image_bytes, language)
+
+        student.latest_detected_deviations = json.dumps(result.get("detected_deviations", []), ensure_ascii=False)
+        student.latest_clinical_analysis = result.get("clinical_analysis", "")
+        db.commit()
+
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 frontend_dist = Path(__file__).resolve().parents[1] / "frontend" / "dist"

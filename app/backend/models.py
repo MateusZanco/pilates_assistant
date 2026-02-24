@@ -20,6 +20,8 @@ class Student(Base):
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     medical_notes: Mapped[str] = mapped_column(Text, default="")
     goals: Mapped[str] = mapped_column(Text, default="")
+    latest_detected_deviations: Mapped[str] = mapped_column(Text, default="[]")
+    latest_clinical_analysis: Mapped[str] = mapped_column(Text, default="")
 
     assessments: Mapped[list[Assessment]] = relationship(back_populates="student", cascade="all, delete-orphan")
     appointments: Mapped[list[Appointment]] = relationship(back_populates="student", cascade="all, delete-orphan")

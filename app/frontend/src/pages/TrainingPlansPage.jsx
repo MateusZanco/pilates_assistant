@@ -48,6 +48,17 @@ function TrainingPlansPage() {
     () => students.find((student) => String(student.id) === selectedStudentId) || null,
     [students, selectedStudentId]
   );
+  const latestDeviations = useMemo(() => {
+    if (!selectedStudent?.latest_detected_deviations) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(selectedStudent.latest_detected_deviations);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [selectedStudent]);
 
   const handleGenerate = () => {
     if (!selectedStudent) {
@@ -98,6 +109,16 @@ function TrainingPlansPage() {
               <p>
                 <span className="font-medium text-slateSoft dark:text-slate-100">{t('plans.goal')}:</span> {selectedStudent.goals || t('plans.notInformed')}
               </p>
+              {latestDeviations.length > 0 ? (
+                <p>
+                  <span className="font-medium text-slateSoft dark:text-slate-100">Latest Deviations:</span> {latestDeviations.join(', ')}
+                </p>
+              ) : null}
+              {selectedStudent.latest_clinical_analysis ? (
+                <p>
+                  <span className="font-medium text-slateSoft dark:text-slate-100">Latest Clinical Analysis:</span> {selectedStudent.latest_clinical_analysis}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}
