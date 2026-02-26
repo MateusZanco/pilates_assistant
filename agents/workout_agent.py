@@ -124,8 +124,9 @@ def generate_workout_plan(student_profile: dict[str, Any], clinical_analysis: st
 
     for _ in range(max_iterations):
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0.2,
+            model="gpt-5-mini",
+            #model="gpt-4o-mini",
+            #temperature=0.2,
             messages=messages,
             tools=tools,
             response_format={"type": "json_object"} if not force_first_tool_call else None,
@@ -157,8 +158,9 @@ def generate_workout_plan(student_profile: dict[str, Any], clinical_analysis: st
                     },
                 ]
                 retry = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    temperature=0.2,
+                    model="gpt-5-mini",
+                    #model="gpt-4o-mini",
+                    #temperature=0.2,
                     messages=retry_messages,
                     response_format={"type": "json_object"},
                     tool_choice="none",

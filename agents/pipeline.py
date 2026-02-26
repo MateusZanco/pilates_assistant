@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
@@ -15,23 +15,31 @@ PROMPT_FILE = ROOT_DIR / "prompts" / "postural_analysis_message.txt"
 
 
 def _angles_text_summary(angles: dict[str, float], language: str) -> str:
-    if language == "pt":
-        return (
-            f"- Inclinação dos ombros: {angles['shoulder_tilt_deg']} graus\n"
-            f"- Inclinação pélvica: {angles['pelvic_tilt_deg']} graus\n"
-            f"- Protração de cabeça: {angles['head_protraction_deg']} graus\n"
-            f"- Inclinação da cabeça: {angles['head_tilt_deg']} graus\n"
-            f"- Inclinação de tronco: {angles['trunk_inclination_deg']} graus"
-        )
+    labels = {
+        "shoulder_tilt_deg": {"pt": "Inclinacao dos ombros", "en": "Shoulder tilt", "unit": "deg"},
+        "pelvic_tilt_deg": {"pt": "Inclinacao pelvica", "en": "Pelvic tilt", "unit": "deg"},
+        "head_protraction_deg": {"pt": "Protracao de cabeca", "en": "Head protraction", "unit": "deg"},
+        "head_tilt_deg": {"pt": "Inclinacao da cabeca", "en": "Head tilt", "unit": "deg"},
+        "trunk_inclination_deg": {"pt": "Inclinacao de tronco", "en": "Trunk inclination", "unit": "deg"},
+        "shoulder_rotation_cm": {"pt": "Rotacao de ombro", "en": "Shoulder rotation", "unit": "cm"},
+        "pelvic_rotation_cm": {"pt": "Rotacao pelvica", "en": "Pelvic rotation", "unit": "cm"},
+        "shoulder_mid_z_cm": {"pt": "Centro dos ombros (eixo Z)", "en": "Shoulder midpoint (Z axis)", "unit": "cm"},
+        "ear_mid_z_cm": {"pt": "Centro das orelhas (eixo Z)", "en": "Ear midpoint (Z axis)", "unit": "cm"},
+    }
 
-    return (
-        f"- Shoulder tilt: {angles['shoulder_tilt_deg']} deg\n"
-        f"- Pelvic tilt: {angles['pelvic_tilt_deg']} deg\n"
-        f"- Head protraction: {angles['head_protraction_deg']} deg\n"
-        f"- Head tilt: {angles['head_tilt_deg']} deg\n"
-        f"- Trunk inclination: {angles['trunk_inclination_deg']} deg"
-    )
+    lines: list[str] = []
+    for key, value in angles.items():
+        if value is None:
+            continue
+        label = labels.get(key)
+        if label:
+            label_text = label["pt"] if language == "pt" else label["en"]
+            unit = label["unit"]
+            lines.append(f"- {label_text}: {value} {unit}")
+        else:
+            lines.append(f"- {key}: {value}")
 
+    return "\n".join(lines).strip()
 
 def _load_system_prompt(language: str) -> str:
     if not PROMPT_FILE.exists():
@@ -52,8 +60,7 @@ def _openai_json_analysis(angles: dict[str, float], language: str) -> dict[str, 
     system_prompt = _load_system_prompt(language)
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        temperature=0.2,
+        model="gpt-5-mini",
         response_format={"type": "json_object"},
         messages=[
             {
@@ -89,6 +96,7 @@ def run_postural_pipeline(image_bytes: bytes, language: str = "en") -> dict[str,
 
     return {
         "status": "success",
+        "detected_view": posture_data.get("detected_view"),
         "detected_deviations": detected_deviations,
         "clinical_analysis": clinical_analysis,
         "angles": posture_data["angles"],

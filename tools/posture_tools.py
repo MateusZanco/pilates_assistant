@@ -141,7 +141,7 @@ def extract_landmarks_and_angles(image_bytes: bytes) -> dict[str, object]:
     shoulder_rotation_cm = abs(left_shoulder_3d[2] - right_shoulder_3d[2]) * 100.0
     pelvic_rotation_cm = abs(left_hip_3d[2] - right_hip_3d[2]) * 100.0
 
-    angles = {
+    raw_angles = {
         "shoulder_tilt_deg": _round2(_acute_angle(shoulder_tilt_raw)),
         "pelvic_tilt_deg": _round2(_acute_angle(pelvic_tilt_raw)),
         "shoulder_rotation_cm": _round2(shoulder_rotation_cm),
@@ -152,6 +152,29 @@ def extract_landmarks_and_angles(image_bytes: bytes) -> dict[str, object]:
         "shoulder_mid_z_cm": _round2(shoulder_mid_3d[2] * 100.0),
         "ear_mid_z_cm": _round2(ear_mid_3d[2] * 100.0),
     }
+
+    shoulder_width_x = abs(left_shoulder_3d[0] - right_shoulder_3d[0])
+    shoulder_depth_z = abs(left_shoulder_3d[2] - right_shoulder_3d[2])
+    # Margin helps reduce false "profile" classifications in noisy frontal captures.
+    detected_view = "frontal" if shoulder_width_x > (shoulder_depth_z * 1.15) else "profile"
+
+    if detected_view == "frontal":
+        angles = {
+            "shoulder_tilt_deg": raw_angles["shoulder_tilt_deg"],
+            "pelvic_tilt_deg": raw_angles["pelvic_tilt_deg"],
+            "head_tilt_deg": raw_angles["head_tilt_deg"],
+            "shoulder_rotation_cm": raw_angles["shoulder_rotation_cm"],
+            "pelvic_rotation_cm": raw_angles["pelvic_rotation_cm"]
+            #"shoulder_mid_z_cm": raw_angles["shoulder_mid_z_cm"],
+            #"ear_mid_z_cm": raw_angles["ear_mid_z_cm"],
+        }
+    else:
+        angles = {
+            "head_protraction_deg": raw_angles["head_protraction_deg"],
+            "trunk_inclination_deg": raw_angles["trunk_inclination_deg"],
+            "shoulder_mid_z_cm": raw_angles["shoulder_mid_z_cm"],
+            "ear_mid_z_cm": raw_angles["ear_mid_z_cm"],
+        }
 
     landmarks2d_payload = [
         {"id": idx, "x": _round2(lm.x), "y": _round2(lm.y), "visibility": _round2(lm.visibility)}
@@ -164,6 +187,7 @@ def extract_landmarks_and_angles(image_bytes: bytes) -> dict[str, object]:
 
     return {
         "angles": angles,
+        "detected_view": detected_view,
         "landmarks_2d": landmarks2d_payload,
         "landmarks_3d": landmarks3d_payload,
     }
